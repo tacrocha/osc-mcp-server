@@ -24,6 +24,10 @@ const OSC_PORT = parseInt(process.env.OSC_PORT || "10023");
 // Initialize OSC client
 const osc = new OSCClient(OSC_HOST, OSC_PORT);
 
+// Emulator process management
+let emulatorProcess: ReturnType<typeof spawn> | null = null;
+let emulatorPid: number | null = null;
+
 // Define available tools
 const TOOLS: Tool[] = [
     // ========== Channel Controls ==========
@@ -1021,6 +1025,22 @@ const TOOLS: Tool[] = [
             properties: {},
         },
     },
+    {
+        name: "osc_stop_emulator",
+        description: "Stop the running X32 emulator server",
+        inputSchema: {
+            type: "object",
+            properties: {},
+        },
+    },
+    {
+        name: "osc_get_emulator_status",
+        description: "Check if the X32 emulator is currently running",
+        inputSchema: {
+            type: "object",
+            properties: {},
+        },
+    },
 ];
 
 // Create MCP server
@@ -1780,6 +1800,26 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
 
             case "osc_start_emulator": {
                 try {
+                    // Check if emulator is already running
+                    if (emulatorPid !== null) {
+                        try {
+                            // Check if process is still alive (signal 0 doesn't kill, just checks)
+                            process.kill(emulatorPid, 0);
+                            return {
+                                content: [
+                                    {
+                                        type: "text",
+                                        text: `X32 emulator is already running (PID: ${emulatorPid}). No need to start it again.`,
+                                    },
+                                ],
+                            };
+                        } catch {
+                            // Process doesn't exist, reset variables
+                            emulatorProcess = null;
+                            emulatorPid = null;
+                        }
+                    }
+
                     const emulatorPath = path.resolve(__dirname, "../emulator/X32");
 
                     const child = spawn(emulatorPath, [], {
@@ -1787,13 +1827,128 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
                         stdio: "ignore",
                     });
 
+                    emulatorProcess = child;
+                    emulatorPid = child.pid || null;
+
                     child.unref();
+
+                    // Wait a moment to check if process started successfully
+                    await new Promise((resolve) => setTimeout(resolve, 500));
+
+                    // Verify process is still running
+                    if (emulatorPid !== null) {
+                        try {
+                            process.kill(emulatorPid, 0);
+                            return {
+                                content: [
+                                    {
+                                        type: "text",
+                                        text: `X32 emulator started successfully (PID: ${emulatorPid}) from ${emulatorPath}. It is now running in the background so you can test without connecting to a physical mixer.`,
+                                    },
+                                ],
+                            };
+                        } catch {
+                            return {
+                                content: [
+                                    {
+                                        type: "text",
+                                        text: `X32 emulator process started but appears to have exited immediately. Check if the emulator binary exists at ${emulatorPath} and is executable (chmod +x emulator/X32).`,
+                                    },
+                                ],
+                                isError: true,
+                            };
+                        }
+                    } else {
+                        return {
+                            content: [
+                                {
+                                    type: "text",
+                                    text: `Failed to get PID from emulator process. The emulator may not have started correctly.`,
+                                },
+                            ],
+                            isError: true,
+                        };
+                    }
+                } catch (error) {
+                    emulatorProcess = null;
+                    emulatorPid = null;
+                    return {
+                        content: [
+                            {
+                                type: "text",
+                                text: `Failed to start X32 emulator: ${
+                                    error instanceof Error ? error.message : String(error)
+                                }. Make sure the emulator binary exists at emulator/X32 and is executable (chmod +x emulator/X32).`,
+                            },
+                        ],
+                        isError: true,
+                    };
+                }
+            }
+
+            case "osc_stop_emulator": {
+                try {
+                    if (emulatorPid === null || emulatorProcess === null) {
+                        return {
+                            content: [
+                                {
+                                    type: "text",
+                                    text: "X32 emulator is not running. Nothing to stop.",
+                                },
+                            ],
+                        };
+                    }
+
+                    // Check if process is still alive
+                    try {
+                        process.kill(emulatorPid, 0);
+                    } catch {
+                        // Process already dead
+                        emulatorProcess = null;
+                        emulatorPid = null;
+                        return {
+                            content: [
+                                {
+                                    type: "text",
+                                    text: "X32 emulator process was not running (may have already stopped).",
+                                },
+                            ],
+                        };
+                    }
+
+                    // Try to kill the process gracefully first (SIGTERM)
+                    try {
+                        process.kill(emulatorPid, "SIGTERM");
+                        // Wait a bit for graceful shutdown
+                        await new Promise((resolve) => setTimeout(resolve, 1000));
+
+                        // Check if still running
+                        try {
+                            process.kill(emulatorPid, 0);
+                            // Still running, force kill
+                            process.kill(emulatorPid, "SIGKILL");
+                        } catch {
+                            // Process terminated successfully
+                        }
+                    } catch (killError) {
+                        // If kill fails, process might already be dead
+                        try {
+                            process.kill(emulatorPid, 0);
+                            // Still alive, try force kill
+                            process.kill(emulatorPid, "SIGKILL");
+                        } catch {
+                            // Process is dead
+                        }
+                    }
+
+                    emulatorProcess = null;
+                    emulatorPid = null;
 
                     return {
                         content: [
                             {
                                 type: "text",
-                                text: `X32 emulator started from ${emulatorPath}. It will keep running in the background so you can test without connecting to a physical mixer.`,
+                                text: "X32 emulator stopped successfully.",
                             },
                         ],
                     };
@@ -1802,9 +1957,57 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
                         content: [
                             {
                                 type: "text",
-                                text: `Failed to start X32 emulator: ${
-                                    error instanceof Error ? error.message : String(error)
-                                }. Make sure the emulator binary exists at emulator/X32 and is executable (chmod +x).`,
+                                text: `Failed to stop X32 emulator: ${error instanceof Error ? error.message : String(error)}`,
+                            },
+                        ],
+                        isError: true,
+                    };
+                }
+            }
+
+            case "osc_get_emulator_status": {
+                try {
+                    if (emulatorPid === null) {
+                        return {
+                            content: [
+                                {
+                                    type: "text",
+                                    text: "X32 emulator is not running.",
+                                },
+                            ],
+                        };
+                    }
+
+                    // Check if process is still alive
+                    try {
+                        process.kill(emulatorPid, 0);
+                        return {
+                            content: [
+                                {
+                                    type: "text",
+                                    text: `X32 emulator is running (PID: ${emulatorPid}).`,
+                                },
+                            ],
+                        };
+                    } catch {
+                        // Process is dead, reset variables
+                        emulatorProcess = null;
+                        emulatorPid = null;
+                        return {
+                            content: [
+                                {
+                                    type: "text",
+                                    text: "X32 emulator is not running (process has terminated).",
+                                },
+                            ],
+                        };
+                    }
+                } catch (error) {
+                    return {
+                        content: [
+                            {
+                                type: "text",
+                                text: `Error checking emulator status: ${error instanceof Error ? error.message : String(error)}`,
                             },
                         ],
                         isError: true,
