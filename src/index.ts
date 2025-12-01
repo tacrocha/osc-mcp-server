@@ -10,7 +10,7 @@ import {
 import { OSCClient } from "./osc-client.js";
 
 // Default OSC configuration
-const OSC_HOST = process.env.OSC_HOST || "192.168.1.70";
+const OSC_HOST = process.env.OSC_HOST || "192.168.1.17";
 const OSC_PORT = parseInt(process.env.OSC_PORT || "10023");
 
 // Initialize OSC client
@@ -673,7 +673,7 @@ const TOOLS: Tool[] = [
                     description: "Mix bus number (1-16)",
                     minimum: 1,
                     maximum: 16,
-            },
+                },
             },
             required: ["channel", "bus"],
         },
