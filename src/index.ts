@@ -1,5 +1,9 @@
 #!/usr/bin/env node
 
+import { exec, spawn } from "child_process";
+import { promisify } from "util";
+import path from "path";
+import { fileURLToPath } from "url";
 import { Server } from "@modelcontextprotocol/sdk/server/index.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import {
@@ -8,6 +12,10 @@ import {
     Tool,
 } from "@modelcontextprotocol/sdk/types.js";
 import { OSCClient } from "./osc-client.js";
+
+const execAsync = promisify(exec);
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 // Default OSC configuration
 const OSC_HOST = process.env.OSC_HOST || "192.168.1.17";
@@ -994,6 +1002,25 @@ const TOOLS: Tool[] = [
             required: ["address"],
         },
     },
+    // ========== Application Controls ==========
+    {
+        name: "osc_open_x32_edit",
+        description:
+            "Open the X32-Edit application to manually control the mixer or verify commands",
+        inputSchema: {
+            type: "object",
+            properties: {},
+        },
+    },
+    {
+        name: "osc_start_emulator",
+        description:
+            "Start the local X32 emulator server from the emulator/X32 binary so you can test without a physical mixer",
+        inputSchema: {
+            type: "object",
+            properties: {},
+        },
+    },
 ];
 
 // Create MCP server
@@ -1724,6 +1751,65 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
                         },
                     ],
                 };
+            }
+
+            // ========== Application Controls ==========
+            case "osc_open_x32_edit": {
+                try {
+                    await execAsync("open /Applications/X32-Edit.app");
+                    return {
+                        content: [
+                            {
+                                type: "text",
+                                text: "X32-Edit application opened successfully. You can now manually control the mixer or verify that commands were applied.",
+                            },
+                        ],
+                    };
+                } catch (error) {
+                    return {
+                        content: [
+                            {
+                                type: "text",
+                                text: `Failed to open X32-Edit: ${error instanceof Error ? error.message : String(error)}. Make sure X32-Edit.app is installed at /Applications/X32-Edit.app`,
+                            },
+                        ],
+                        isError: true,
+                    };
+                }
+            }
+
+            case "osc_start_emulator": {
+                try {
+                    const emulatorPath = path.resolve(__dirname, "../emulator/X32");
+
+                    const child = spawn(emulatorPath, [], {
+                        detached: true,
+                        stdio: "ignore",
+                    });
+
+                    child.unref();
+
+                    return {
+                        content: [
+                            {
+                                type: "text",
+                                text: `X32 emulator started from ${emulatorPath}. It will keep running in the background so you can test without connecting to a physical mixer.`,
+                            },
+                        ],
+                    };
+                } catch (error) {
+                    return {
+                        content: [
+                            {
+                                type: "text",
+                                text: `Failed to start X32 emulator: ${
+                                    error instanceof Error ? error.message : String(error)
+                                }. Make sure the emulator binary exists at emulator/X32 and is executable (chmod +x).`,
+                            },
+                        ],
+                        isError: true,
+                    };
+                }
             }
 
             default:
