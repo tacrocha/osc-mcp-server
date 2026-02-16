@@ -12,8 +12,7 @@
         "dev": "tsc --watch",
         "start": "node dist/index.js",
         "prepare": "npm run build",
-        "test": "node test-connection.js",
-        "verify-osc": "node scripts/verify-osc.mjs"
+        "test": "node test-connection.js"
     },
     "keywords": [
         "mcp",
