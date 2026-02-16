@@ -55,7 +55,8 @@ You can configure the OSC connection using environment variables:
 - `OSC_PORT`: OSC port of your mixer (default: `10023`)
   - **X32/M32**: use port `10023`
   - **XR12/XR16/XR18/MR18 (X-Air)**: use port `10024`
-- `OSC_MIXER_TYPE`: Optional. `x32` (X32/M32), `x-air` (XR12/XR16/XR18/MR18), or `auto` (default, tries both)
+
+The server **auto-detects** the mixer family (X32 vs X-Air) at connection time by querying `/xinfo` or `/info`; no environment variable is needed.
 
 ### Claude Desktop Configuration
 
@@ -249,10 +250,27 @@ The MCP server exposes **50+ tools** for comprehensive mixer control:
 - Automatic connection keep-alive (/xremote every 9 seconds)
 - Uses `osc-js` library with DatagramPlugin for UDP communication
 
-### Supported Mixer Models:
-- Behringer X32, X32 Compact, X32 Producer, X32 Rack (port 10023)
-- Midas M32 (compatible, port 10023)
-- Behringer XR12, XR16, XR18 / Midas MR18 (X-Air series, port 10024)
+### Supported Mixer Models
+
+- **X32 family** (port 10023): Behringer X32, X32 Compact, X32 Producer, X32 Rack; Midas M32
+- **X-Air family** (port 10024): Behringer XR12, XR16, XR18; Midas MR18
+
+Mixer family is **auto-detected** when connecting; the server uses the correct OSC paths for each family.
+
+### Supported features by family
+
+| Feature | X32 / M32 | X-Air (XR12/XR16/XR18/MR18) |
+|--------|-----------|----------------------------|
+| Channels (fader, mute, pan, name, color) | Yes | Yes |
+| EQ, gate, dynamics | Yes | Yes |
+| Buses 1–6 | Yes | Yes |
+| Main LR | Yes | Yes |
+| Sends to bus | Yes | Yes |
+| Scenes (recall, save, name) | Yes | Yes |
+| Channel input source | Yes | Yes (0–15) |
+| Effects | Yes | Yes |
+| Matrix 1–6 | Yes | No (no-op) |
+| Aux 1–6, send to aux | Yes | No (no-op) |
 
 ## Development
 

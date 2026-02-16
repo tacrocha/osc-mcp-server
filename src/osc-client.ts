@@ -1,11 +1,14 @@
 import OSC from "osc-js";
 
+export type MixerFamily = "x32" | "x-air";
+
 export class OSCClient {
     private osc: any;
     private host: string;
     private port: number;
     private responseCallbacks: Map<string, (value: any) => void> = new Map();
     private isConnected: boolean = false;
+    private mixerFamily: MixerFamily | null = null;
 
     constructor(host: string, port: number) {
         this.host = host;
@@ -49,12 +52,19 @@ export class OSCClient {
                 reject(new Error("OSC socket open timeout"));
             }, 5000);
 
-            this.osc.on("open", () => {
+            this.osc.on("open", async () => {
                 clearTimeout(timeout);
                 this.isConnected = true;
                 console.error("OSC UDP Port ready");
 
-                // Subscribe to mixer updates
+                try {
+                    await this.detectMixerFamily();
+                } catch (error) {
+                    reject(error);
+                    return;
+                }
+
+                // Subscribe to mixer updates (/xremote works on both X32 and X-Air)
                 this.sendCommand("/xremote");
 
                 // Keep connection alive with periodic /xremote messages
@@ -72,6 +82,32 @@ export class OSCClient {
         });
     }
 
+    private async detectMixerFamily(): Promise<void> {
+        try {
+            await this.sendAndReceiveWithTimeout("/xinfo", 500);
+            this.mixerFamily = "x-air";
+            console.error("Detected mixer family: X-Air");
+            return;
+        } catch {
+            // Not X-Air, try X32
+        }
+        try {
+            await this.sendAndReceiveWithTimeout("/info", 500);
+            this.mixerFamily = "x32";
+            console.error("Detected mixer family: X32/M32");
+            return;
+        } catch {
+            // Neither responded
+        }
+        throw new Error(
+            "Could not detect mixer family: /xinfo and /info did not respond. Check OSC_HOST and OSC_PORT."
+        );
+    }
+
+    getMixerFamily(): MixerFamily | null {
+        return this.mixerFamily;
+    }
+
     private sendCommand(address: string, args?: any[]): void {
         if (!this.isConnected) {
             console.error("OSC not connected");
@@ -83,18 +119,34 @@ export class OSCClient {
     }
 
     private async sendAndReceive(address: string, args?: any[]): Promise<any> {
+        return this.sendAndReceiveWithTimeout(address, 1000, args);
+    }
+
+    private async sendAndReceiveWithTimeout(
+        address: string,
+        timeoutMs: number,
+        args?: any[]
+    ): Promise<any> {
         return new Promise((resolve, reject) => {
             this.responseCallbacks.set(address, resolve);
             this.sendCommand(address, args);
 
-            // Timeout after 1 second
             setTimeout(() => {
                 if (this.responseCallbacks.has(address)) {
                     this.responseCallbacks.delete(address);
                     reject(new Error(`Timeout waiting for response from ${address}`));
                 }
-            }, 1000);
+            }, timeoutMs);
         });
+    }
+
+    /**
+     * Returns the OSC path for the current mixer family, or null if the feature is unsupported on X-Air.
+     */
+    private translateAddress(x32Path: string, xAirPath?: string): string | null {
+        if (this.mixerFamily === "x32") return x32Path;
+        if (this.mixerFamily === "x-air") return xAirPath ?? null;
+        return x32Path; // not yet detected, use X32 path (e.g. during very early connect)
     }
 
     private getChannelPath(channel: number): string {
@@ -102,6 +154,8 @@ export class OSCClient {
     }
 
     private getBusPath(bus: number): string {
+        // X-Air uses unpadded bus index (/bus/1); X32 uses /bus/01
+        if (this.mixerFamily === "x-air") return `/bus/${bus}`;
         return `/bus/${bus.toString().padStart(2, "0")}`;
     }
 
@@ -309,23 +363,28 @@ export class OSCClient {
     }
 
     // ========== Aux Controls ==========
+    // X-Air uses /rtn/aux/ and /fxsend/N/; topology differs. No-op on X-Air for transparency.
 
     async setAuxFader(aux: number, level: number): Promise<void> {
+        if (this.mixerFamily === "x-air") return;
         const path = `${this.getAuxPath(aux)}/mix/fader`;
         this.sendCommand(path, [level]);
     }
 
     async getAuxFader(aux: number): Promise<number> {
+        if (this.mixerFamily === "x-air") return 0.75;
         const path = `${this.getAuxPath(aux)}/mix/fader`;
         return await this.sendAndReceive(path);
     }
 
     async muteAux(aux: number, mute: boolean): Promise<void> {
+        if (this.mixerFamily === "x-air") return;
         const path = `${this.getAuxPath(aux)}/mix/on`;
         this.sendCommand(path, [mute ? 0 : 1]);
     }
 
     async setAuxPan(aux: number, pan: number): Promise<void> {
+        if (this.mixerFamily === "x-air") return;
         const path = `${this.getAuxPath(aux)}/mix/pan`;
         const mixerPan = (pan + 1) / 2;
         this.sendCommand(path, [mixerPan]);
@@ -344,6 +403,7 @@ export class OSCClient {
     }
 
     async sendToAux(channel: number, aux: number, level: number): Promise<void> {
+        if (this.mixerFamily === "x-air") return;
         const path = `${this.getChannelPath(channel)}/mix/${(aux + 15).toString().padStart(2, "0")}/level`;
         this.sendCommand(path, [level]);
     }
@@ -356,61 +416,95 @@ export class OSCClient {
     // ========== Main Mix ==========
 
     async setMainFader(level: number): Promise<void> {
-        this.sendCommand("/main/st/mix/fader", [level]);
+        const path = this.translateAddress("/main/st/mix/fader", "/lr/mix/fader");
+        if (path) this.sendCommand(path, [level]);
     }
 
     async getMainFader(): Promise<number> {
-        return await this.sendAndReceive("/main/st/mix/fader");
+        const path = this.translateAddress("/main/st/mix/fader", "/lr/mix/fader");
+        if (!path) return 0.75;
+        return await this.sendAndReceive(path);
     }
 
     async muteMain(mute: boolean): Promise<void> {
-        this.sendCommand("/main/st/mix/on", [mute ? 0 : 1]);
+        const path = this.translateAddress("/main/st/mix/on", "/lr/mix/on");
+        if (path) this.sendCommand(path, [mute ? 0 : 1]);
     }
 
     async setMainPan(pan: number): Promise<void> {
-        const path = "/main/st/mix/pan";
+        const path = this.translateAddress("/main/st/mix/pan", "/lr/mix/pan");
+        if (!path) return;
         const mixerPan = (pan + 1) / 2;
         this.sendCommand(path, [mixerPan]);
     }
 
     // ========== Matrix ==========
+    // Matrix outputs (/mtx/*) are not available on X-Air; no-op for that family.
 
     async setMatrixFader(matrix: number, level: number): Promise<void> {
+        if (this.mixerFamily === "x-air") return;
         const path = `/mtx/${matrix.toString().padStart(2, "0")}/mix/fader`;
         this.sendCommand(path, [level]);
     }
 
     async muteMatrix(matrix: number, mute: boolean): Promise<void> {
+        if (this.mixerFamily === "x-air") return;
         const path = `/mtx/${matrix.toString().padStart(2, "0")}/mix/on`;
         this.sendCommand(path, [mute ? 0 : 1]);
     }
 
     // ========== Effects ==========
+    // X-Air uses /fx/1-4/insert (not /on) and unpadded effect index; X-Air has 4 FX slots.
 
     async setEffectOn(effect: number, on: boolean): Promise<void> {
+        if (this.mixerFamily === "x-air") {
+            if (effect < 1 || effect > 4) return;
+            const path = `/fx/${effect}/insert`;
+            this.sendCommand(path, [on ? 1 : 0]);
+            return;
+        }
         const path = `/fx/${effect.toString().padStart(2, "0")}/on`;
         this.sendCommand(path, [on ? 1 : 0]);
     }
 
     async setEffectMix(effect: number, mix: number): Promise<void> {
-        const path = `/fx/${effect.toString().padStart(2, "0")}/mix`;
-        this.sendCommand(path, [mix]);
+        const path =
+            this.mixerFamily === "x-air"
+                ? effect >= 1 && effect <= 4
+                    ? `/fx/${effect}/mix`
+                    : null
+                : `/fx/${effect.toString().padStart(2, "0")}/mix`;
+        if (path) this.sendCommand(path, [mix]);
     }
 
     async setEffectParam(effect: number, param: number, value: number): Promise<void> {
-        const path = `/fx/${effect.toString().padStart(2, "0")}/par/${param.toString().padStart(2, "0")}`;
-        this.sendCommand(path, [value]);
+        const path =
+            this.mixerFamily === "x-air"
+                ? effect >= 1 && effect <= 4
+                    ? `/fx/${effect}/par/${param.toString().padStart(2, "0")}`
+                    : null
+                : `/fx/${effect.toString().padStart(2, "0")}/par/${param.toString().padStart(2, "0")}`;
+        if (path) this.sendCommand(path, [value]);
     }
 
     // ========== Routing ==========
 
     async setChannelSource(channel: number, source: number): Promise<void> {
-        const path = `${this.getChannelPath(channel)}/config/source`;
-        this.sendCommand(path, [source]);
+        const path = this.translateAddress(
+            `${this.getChannelPath(channel)}/config/source`,
+            `${this.getChannelPath(channel)}/config/insrc`
+        );
+        if (!path) return;
+        const value = this.mixerFamily === "x-air" ? Math.max(0, Math.min(15, source)) : source;
+        this.sendCommand(path, [value]);
     }
 
     async getChannelSource(channel: number): Promise<number> {
-        const path = `${this.getChannelPath(channel)}/config/source`;
+        const path = this.translateAddress(
+            `${this.getChannelPath(channel)}/config/source`,
+            `${this.getChannelPath(channel)}/config/insrc`
+        );
+        if (!path) return 0;
         return await this.sendAndReceive(path);
     }
 
@@ -418,19 +512,40 @@ export class OSCClient {
 
     async recallScene(scene: number): Promise<void> {
         const path = `/-snap/load`;
-        this.sendCommand(path, [scene - 1]); // Mixer scenes are 0-indexed
+        // X32 uses 0-based index; X-Air uses 1-64
+        const arg = this.mixerFamily === "x-air" ? scene : scene - 1;
+        this.sendCommand(path, [arg]);
     }
 
     async saveScene(scene: number, name?: string): Promise<void> {
-        const path = `/-snap/store`;
-        this.sendCommand(path, [scene - 1]);
+        const path = this.translateAddress("/-snap/store", "/-snap/save");
+        if (!path) return;
+        const arg = this.mixerFamily === "x-air" ? scene : scene - 1;
+        this.sendCommand(path, [arg]);
         if (name) {
-            const namePath = `/-snap/${(scene - 1).toString().padStart(3, "0")}/name`;
-            this.sendCommand(namePath, [name]);
+            const namePath = this.translateAddress(
+                `/-snap/${(scene - 1).toString().padStart(3, "0")}/name`,
+                `/-snap/${(scene - 1).toString().padStart(2, "0")}/name/01`
+            );
+            if (namePath) this.sendCommand(namePath, [name]);
         }
     }
 
     async getSceneName(scene: number): Promise<string> {
+        if (this.mixerFamily === "x-air") {
+            // X-Air: name-by-index paths do not respond (verified). Only /-snap/name (current) works.
+            // If the requested scene is the current snapshot, return its name; otherwise we cannot read it.
+            try {
+                const currentIndex = await this.sendAndReceive("/-snap/index");
+                const current = typeof currentIndex === "number" ? currentIndex : Number(currentIndex);
+                if (current === scene) {
+                    return await this.sendAndReceive("/-snap/name");
+                }
+            } catch {
+                // ignore
+            }
+            return "";
+        }
         const path = `/-snap/${(scene - 1).toString().padStart(3, "0")}/name`;
         return await this.sendAndReceive(path);
     }
@@ -448,27 +563,14 @@ export class OSCClient {
 
     async getMixerStatus(): Promise<any> {
         try {
-            // X-Air/M-Air (XR12, XR16, XR18, MR18) use /xinfo; X32/M32 use /info
-            const mixerType = process.env.OSC_MIXER_TYPE || "auto";
-            const infoAddress =
-                mixerType === "x-air" ? "/xinfo" : mixerType === "x32" ? "/info" : null;
-
-            let info: any;
-            if (infoAddress) {
-                info = await this.sendAndReceive(infoAddress);
-            } else {
-                // Auto-detect: try /xinfo first (X-Air), then /info (X32)
-                try {
-                    info = await this.sendAndReceive("/xinfo");
-                } catch {
-                    info = await this.sendAndReceive("/info");
-                }
-            }
+            const infoAddress = this.mixerFamily === "x-air" ? "/xinfo" : "/info";
+            const info = await this.sendAndReceive(infoAddress);
 
             return {
                 connected: true,
                 host: this.host,
                 port: this.port,
+                mixerFamily: this.mixerFamily,
                 info,
             };
         } catch (error) {
@@ -476,6 +578,7 @@ export class OSCClient {
                 connected: false,
                 host: this.host,
                 port: this.port,
+                mixerFamily: this.mixerFamily,
                 error: error instanceof Error ? error.message : String(error),
             };
         }
