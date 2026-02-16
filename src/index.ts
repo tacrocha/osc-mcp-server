@@ -935,7 +935,7 @@ const TOOLS: Tool[] = [
             properties: {
                 scene: {
                     type: "number",
-                    description: "Scene number (1-100)",
+                    description: "Scene number (1-100; X-Air: 1-64)",
                     minimum: 1,
                     maximum: 100,
                 },
@@ -951,7 +951,7 @@ const TOOLS: Tool[] = [
             properties: {
                 scene: {
                     type: "number",
-                    description: "Scene number (1-100)",
+                    description: "Scene number (1-100; X-Air: 1-64)",
                     minimum: 1,
                     maximum: 100,
                 },
@@ -971,7 +971,7 @@ const TOOLS: Tool[] = [
             properties: {
                 scene: {
                     type: "number",
-                    description: "Scene number (1-100)",
+                    description: "Scene number (1-100; X-Air: 1-64)",
                     minimum: 1,
                     maximum: 100,
                 },

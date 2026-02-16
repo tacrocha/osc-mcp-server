@@ -517,6 +517,7 @@ export class OSCClient {
     // ========== Scenes ==========
 
     async recallScene(scene: number): Promise<void> {
+        if (this.mixerFamily === "x-air") scene = Math.max(1, Math.min(64, Math.round(scene)));
         const path = `/-snap/load`;
         // X32 uses 0-based index; X-Air uses 1-64
         const arg = this.mixerFamily === "x-air" ? scene : scene - 1;
@@ -525,6 +526,7 @@ export class OSCClient {
 
     async saveScene(scene: number, name?: string): Promise<void> {
         if (this.mixerFamily === "x-air") {
+            scene = Math.max(1, Math.min(64, Math.round(scene)));
             // X-Air: snapshot operations target the current snapshot (not indexed).
             // To save a name we must load the slot, set /-snap/name, then /-snap/save to that slot.
             this.sendCommand("/-snap/load", [scene]);
@@ -544,6 +546,7 @@ export class OSCClient {
 
     async getSceneName(scene: number): Promise<string> {
         if (this.mixerFamily === "x-air") {
+            scene = Math.max(1, Math.min(64, Math.round(scene)));
             // X-Air: name-by-index paths do not respond (verified). Only /-snap/name (current) works.
             // If the requested scene is the current snapshot, return its name; otherwise we cannot read it.
             try {
