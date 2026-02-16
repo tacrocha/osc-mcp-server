@@ -234,7 +234,13 @@ export class OSCClient {
 
     async setEQFrequency(channel: number, band: number, frequency: number): Promise<void> {
         const path = `${this.getChannelPath(channel)}/eq/${band}/f`;
-        this.sendCommand(path, [frequency]);
+        // X-Air expects 0.0-1.0 (log scale 20Hz-20kHz); X32 uses Hz directly
+        const value =
+            this.mixerFamily === "x-air"
+                ? (Math.log10(Math.max(20, Math.min(20000, frequency))) - Math.log10(20)) /
+                  (Math.log10(20000) - Math.log10(20))
+                : frequency;
+        this.sendCommand(path, [value]);
     }
 
     async setEQQ(channel: number, band: number, q: number): Promise<void> {
