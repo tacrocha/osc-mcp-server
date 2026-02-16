@@ -50,7 +50,7 @@ npm run build
 ### Supported mixers and limits
 
 - **X32 / M32**: Full feature set (channels 1–32, buses 1–16, aux 1–6, matrix 1–6, effects 1–8, scenes 1–100).
-- **X-Air** (XR12, XR16, XR18, MR18): Channels, buses, main LR, EQ, dynamics, effects **1–4**, scenes **1–64**. No matrix or aux control; scene names are only available for the current snapshot. Use `osc_get_mixer_status` to see `effectsRange` and `scenesRange` when connected to X-Air.
+- **X-Air** (XR12, XR16, XR18, MR18): Channels, buses, main LR, EQ, dynamics, effects **1–4**, scenes **1–64**. No matrix or aux control. **Aux getters** (`osc_get_aux_fader`, etc.) return a placeholder value (e.g. 0.75) on X-Air—they are not read from the mixer. **Scene names** (`osc_get_scene_name`) return a value only when that scene is the current snapshot; otherwise they return an empty string. Use `osc_get_mixer_status` to see `effectsRange` and `scenesRange` when connected to X-Air.
 
 ### Environment Variables
 
