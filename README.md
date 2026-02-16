@@ -53,6 +53,9 @@ You can configure the OSC connection using environment variables:
 
 - `OSC_HOST`: IP address of your mixer (default: `192.168.1.70`)
 - `OSC_PORT`: OSC port of your mixer (default: `10023`)
+  - **X32/M32**: use port `10023`
+  - **XR12/XR16/XR18/MR18 (X-Air)**: use port `10024`
+- `OSC_MIXER_TYPE`: Optional. `x32` (X32/M32), `x-air` (XR12/XR16/XR18/MR18), or `auto` (default, tries both)
 
 ### Claude Desktop Configuration
 
@@ -247,11 +250,9 @@ The MCP server exposes **50+ tools** for comprehensive mixer control:
 - Uses `osc-js` library with DatagramPlugin for UDP communication
 
 ### Supported Mixer Models:
-- Behringer X32
-- Behringer X32 Compact
-- Behringer X32 Producer
-- Behringer X32 Rack
-- Midas M32 (compatible)
+- Behringer X32, X32 Compact, X32 Producer, X32 Rack (port 10023)
+- Midas M32 (compatible, port 10023)
+- Behringer XR12, XR16, XR18 / Midas MR18 (X-Air series, port 10024)
 
 ## Development
 

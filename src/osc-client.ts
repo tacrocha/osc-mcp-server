@@ -13,6 +13,10 @@ export class OSCClient {
 
         // Create OSC instance with UDP plugin
         const plugin = new (OSC as any).DatagramPlugin({
+            open: {
+                host: "0.0.0.0",
+                port: 0,
+            },
             send: {
                 host: this.host,
                 port: this.port,
@@ -41,12 +45,12 @@ export class OSCClient {
 
     async connect(): Promise<void> {
         return new Promise((resolve, reject) => {
-            try {
-                // Open OSC connection (listening on any available port)
-                this.osc.open({
-                    port: 0, // Use any available port
-                });
+            const timeout = setTimeout(() => {
+                reject(new Error("OSC socket open timeout"));
+            }, 5000);
 
+            this.osc.on("open", () => {
+                clearTimeout(timeout);
                 this.isConnected = true;
                 console.error("OSC UDP Port ready");
 
@@ -57,7 +61,12 @@ export class OSCClient {
                 setInterval(() => this.sendCommand("/xremote"), 9000);
 
                 resolve();
+            });
+
+            try {
+                this.osc.open({ port: 0 });
             } catch (error) {
+                clearTimeout(timeout);
                 reject(error);
             }
         });
@@ -439,15 +448,28 @@ export class OSCClient {
 
     async getMixerStatus(): Promise<any> {
         try {
-            const info = await this.sendAndReceive("/info");
-            const status = await this.sendAndReceive("/status");
+            // X-Air/M-Air (XR12, XR16, XR18, MR18) use /xinfo; X32/M32 use /info
+            const mixerType = process.env.OSC_MIXER_TYPE || "auto";
+            const infoAddress =
+                mixerType === "x-air" ? "/xinfo" : mixerType === "x32" ? "/info" : null;
+
+            let info: any;
+            if (infoAddress) {
+                info = await this.sendAndReceive(infoAddress);
+            } else {
+                // Auto-detect: try /xinfo first (X-Air), then /info (X32)
+                try {
+                    info = await this.sendAndReceive("/xinfo");
+                } catch {
+                    info = await this.sendAndReceive("/info");
+                }
+            }
 
             return {
                 connected: true,
                 host: this.host,
                 port: this.port,
                 info,
-                status,
             };
         } catch (error) {
             return {
