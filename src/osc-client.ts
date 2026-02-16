@@ -524,16 +524,21 @@ export class OSCClient {
     }
 
     async saveScene(scene: number, name?: string): Promise<void> {
+        if (this.mixerFamily === "x-air") {
+            // X-Air: snapshot operations target the current snapshot (not indexed).
+            // To save a name we must load the slot, set /-snap/name, then /-snap/save to that slot.
+            this.sendCommand("/-snap/load", [scene]);
+            if (name) this.sendCommand("/-snap/name", [name]);
+            this.sendCommand("/-snap/save", [scene]);
+            return;
+        }
         const path = this.translateAddress("/-snap/store", "/-snap/save");
         if (!path) return;
-        const arg = this.mixerFamily === "x-air" ? scene : scene - 1;
+        const arg = scene - 1;
         this.sendCommand(path, [arg]);
         if (name) {
-            const namePath = this.translateAddress(
-                `/-snap/${(scene - 1).toString().padStart(3, "0")}/name`,
-                `/-snap/${(scene - 1).toString().padStart(2, "0")}/name/01`
-            );
-            if (namePath) this.sendCommand(namePath, [name]);
+            const namePath = `/-snap/${(scene - 1).toString().padStart(3, "0")}/name`;
+            this.sendCommand(namePath, [name]);
         }
     }
 
