@@ -47,6 +47,11 @@ npm run build
 
 ## Configuration
 
+### Supported mixers and limits
+
+- **X32 / M32**: Full feature set (channels 1–32, buses 1–16, aux 1–6, matrix 1–6, effects 1–8, scenes 1–100).
+- **X-Air** (XR12, XR16, XR18, MR18): Channels, buses, main LR, EQ, dynamics, effects **1–4**, scenes **1–64**. No matrix or aux control; scene names are only available for the current snapshot. Use `osc_get_mixer_status` to see `effectsRange` and `scenesRange` when connected to X-Air.
+
 ### Environment Variables
 
 You can configure the OSC connection using environment variables:

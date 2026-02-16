@@ -577,13 +577,18 @@ export class OSCClient {
             const infoAddress = this.mixerFamily === "x-air" ? "/xinfo" : "/info";
             const info = await this.sendAndReceive(infoAddress);
 
-            return {
+            const result: Record<string, unknown> = {
                 connected: true,
                 host: this.host,
                 port: this.port,
                 mixerFamily: this.mixerFamily,
                 info,
             };
+            if (this.mixerFamily === "x-air") {
+                result.effectsRange = "1-4";
+                result.scenesRange = "1-64";
+            }
+            return result;
         } catch (error) {
             return {
                 connected: false,
