@@ -47,12 +47,21 @@ npm run build
 
 ## Configuration
 
+### Supported mixers and limits
+
+- **X32 / M32**: Full feature set (channels 1–32, buses 1–16, aux 1–6, matrix 1–6, effects 1–8, scenes 1–100).
+- **X-Air** (XR12, XR16, XR18, MR18): Channels, buses, main LR, EQ, dynamics, effects **1–4**, scenes **1–64**. No matrix or aux control. **Aux getters** (`osc_get_aux_fader`, etc.) return a placeholder value (e.g. 0.75) on X-Air—they are not read from the mixer. **Scene names** (`osc_get_scene_name`) return a value only when that scene is the current snapshot; otherwise they return an empty string. Use `osc_get_mixer_status` to see `effectsRange` and `scenesRange` when connected to X-Air.
+
 ### Environment Variables
 
 You can configure the OSC connection using environment variables:
 
 - `OSC_HOST`: IP address of your mixer (default: `192.168.1.70`)
 - `OSC_PORT`: OSC port of your mixer (default: `10023`)
+  - **X32/M32**: use port `10023`
+  - **XR12/XR16/XR18/MR18 (X-Air)**: use port `10024`
+
+The server **auto-detects** the mixer family (X32 vs X-Air) at connection time by querying `/xinfo` or `/info`; no environment variable is needed.
 
 ### Claude Desktop Configuration
 
@@ -246,12 +255,27 @@ The MCP server exposes **50+ tools** for comprehensive mixer control:
 - Automatic connection keep-alive (/xremote every 9 seconds)
 - Uses `osc-js` library with DatagramPlugin for UDP communication
 
-### Supported Mixer Models:
-- Behringer X32
-- Behringer X32 Compact
-- Behringer X32 Producer
-- Behringer X32 Rack
-- Midas M32 (compatible)
+### Supported Mixer Models
+
+- **X32 family** (port 10023): Behringer X32, X32 Compact, X32 Producer, X32 Rack; Midas M32
+- **X-Air family** (port 10024): Behringer XR12, XR16, XR18; Midas MR18
+
+Mixer family is **auto-detected** when connecting; the server uses the correct OSC paths for each family.
+
+### Supported features by family
+
+| Feature | X32 / M32 | X-Air (XR12/XR16/XR18/MR18) |
+|--------|-----------|----------------------------|
+| Channels (fader, mute, pan, name, color) | Yes | Yes |
+| EQ, gate, dynamics | Yes | Yes |
+| Buses 1–6 | Yes | Yes |
+| Main LR | Yes | Yes |
+| Sends to bus | Yes | Yes |
+| Scenes (recall, save, name) | Yes | Yes |
+| Channel input source | Yes | Yes (0–15) |
+| Effects | Yes | Yes |
+| Matrix 1–6 | Yes | No (no-op) |
+| Aux 1–6, send to aux | Yes | No (no-op) |
 
 ## Development
 

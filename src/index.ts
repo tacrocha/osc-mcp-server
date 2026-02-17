@@ -825,7 +825,7 @@ const TOOLS: Tool[] = [
             properties: {
                 effect: {
                     type: "number",
-                    description: "Effect number (1-8)",
+                    description: "Effect number (1-8; X-Air: 1-4 only)",
                     minimum: 1,
                     maximum: 8,
                 },
@@ -845,7 +845,7 @@ const TOOLS: Tool[] = [
             properties: {
                 effect: {
                     type: "number",
-                    description: "Effect number (1-8)",
+                    description: "Effect number (1-8; X-Air: 1-4 only)",
                     minimum: 1,
                     maximum: 8,
                 },
@@ -867,7 +867,7 @@ const TOOLS: Tool[] = [
             properties: {
                 effect: {
                     type: "number",
-                    description: "Effect number (1-8)",
+                    description: "Effect number (1-8; X-Air: 1-4 only)",
                     minimum: 1,
                     maximum: 8,
                 },
@@ -935,7 +935,7 @@ const TOOLS: Tool[] = [
             properties: {
                 scene: {
                     type: "number",
-                    description: "Scene number (1-100)",
+                    description: "Scene number (1-100; X-Air: 1-64)",
                     minimum: 1,
                     maximum: 100,
                 },
@@ -951,7 +951,7 @@ const TOOLS: Tool[] = [
             properties: {
                 scene: {
                     type: "number",
-                    description: "Scene number (1-100)",
+                    description: "Scene number (1-100; X-Air: 1-64)",
                     minimum: 1,
                     maximum: 100,
                 },
@@ -971,7 +971,7 @@ const TOOLS: Tool[] = [
             properties: {
                 scene: {
                     type: "number",
-                    description: "Scene number (1-100)",
+                    description: "Scene number (1-100; X-Air: 1-64)",
                     minimum: 1,
                     maximum: 100,
                 },
