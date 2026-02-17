@@ -304,7 +304,7 @@ Or via custom command (channel 05, 100 Hz for male vocal):
 {"address": "/ch/05/preamp/hpf", "value": 100}
 ```
 
-**Note:** X-Air may expect either raw Hz (20-400) or normalized (0.0-1.0 for 20-200 Hz). The MCP tools send raw Hz. If Low Cut doesn't respond, try normalized: `(Hz - 20) / 180` (e.g. 100 Hz → 0.444).
+**Note:** X-Air expects normalized 0.0-1.0 (logarithmic scale, 20-400 Hz). The MCP tools send normalized; formula: `(log10(Hz) - log10(20)) / (log10(400) - log10(20))` (e.g. 100 Hz → ~0.537).
 
 #### Controlling Insert Effects (X-Air)
 ```json

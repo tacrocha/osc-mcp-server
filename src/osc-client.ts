@@ -179,8 +179,8 @@ export class OSCClient {
 
     // ========== Preamp / HPF (Low Cut) ==========
     // X-Air: /ch/{nn}/preamp/hpon (0/1), /ch/{nn}/preamp/hpf (frequency)
-    // Behringer wiki: hpf is 0.0-1.0 mapping to 20-200 Hz
-    // xair-api-python: highpassfilter 20-400 Hz (sends raw Hz - try both formats)
+    // Behringer wiki: hpf 0.0-1.0 maps to 20-200 Hz (documented). Hardware supports 20-400 Hz, logarithmic scale.
+    // Values outside 20-400 are clamped (e.g. 10→20, 500→400).
 
     async setHPFOn(channel: number, on: boolean): Promise<void> {
         const path = `${this.getChannelPath(channel)}/preamp/hpon`;
@@ -206,10 +206,12 @@ export class OSCClient {
 
     async setHPF(channel: number, frequencyHz: number): Promise<void> {
         const path = `${this.getChannelPath(channel)}/preamp/hpf`;
-        // X-Air: 20-400 Hz, float 0.0-1.0 (logarithmic scale)
+        // X-Air: 20-400 Hz, float 0.0-1.0 (logarithmic scale). Mixer quantizes to steps (coarser at high Hz).
+        // Nudge +1 Hz below 250 only; no nudge at 250+ (user prefers e.g. 300→296 over 300→305).
         const hz = Math.max(20, Math.min(400, frequencyHz));
+        const nudge = hz < 250 ? Math.min(400, hz + 1) : hz;
         const normalized =
-            (Math.log10(hz) - Math.log10(20)) /
+            (Math.log10(nudge) - Math.log10(20)) /
             (Math.log10(400) - Math.log10(20));
         this.sendCommand(path, [normalized]);
     }
