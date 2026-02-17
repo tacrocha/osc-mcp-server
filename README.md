@@ -13,6 +13,7 @@ A Model Context Protocol (MCP) server for controlling **X-Air family** digital m
 - 📸 **Scenes**: Recall, save, and manage snapshots (1-64) with custom names
 - 🎛️ **Bus Control**: Full control over mix buses 1-6 with faders, pan, mute, and naming
 - 🎵 **Effects**: Control effects 1-4 with on/off, mix, and parameter adjustment
+- 🎚️ **FX Sends**: Channel sends to FX 1-4 (reverb, etc.) with dB-calibrated levels
 - 🔌 **Routing**: Configure channel input sources (0-15)
 - 📝 **Naming**: Set and get names for channels and buses
 - 🔧 **Custom Commands**: Send any OSC command to the mixer
@@ -167,13 +168,14 @@ Once configured in Claude Desktop, you can use natural language to control your 
 
 ## Available Tools
 
-The MCP server exposes **39 tools** for X-Air mixer control. Limits: channels 1-16, buses 1-6, effects 1-4, scenes 1-64.
+The MCP server exposes **46 tools** for X-Air mixer control. Limits: channels 1-16, buses 1-6, effects 1-4, FX sends (buses 7-10), scenes 1-64.
 
-### Channel Controls (9 tools)
-- **osc_set_fader** / **osc_get_fader** - Channel fader level (0.0-1.0)
+### Channel Controls (13 tools)
+- **osc_set_fader** / **osc_get_fader** - Channel fader level (0.0-1.0, 0.75=0dB)
 - **osc_mute_channel** / **osc_get_mute** - Mute/unmute
 - **osc_set_pan** / **osc_get_pan** - Pan (-1.0 to 1.0)
 - **osc_set_channel_name** / **osc_get_channel_name** - Channel name
+- **osc_set_hpf_on** / **osc_set_hpf** / **osc_get_hpf** - High-pass filter (20-400 Hz)
 - **osc_set_channel_source** / **osc_get_channel_source** - Input source (0-15)
 
 ### EQ Controls (5 tools)
@@ -190,8 +192,9 @@ The MCP server exposes **39 tools** for X-Air mixer control. Limits: channels 1-
 - **osc_set_bus_fader** / **osc_get_bus_fader** - Bus fader (buses 1-6)
 - **osc_mute_bus** / **osc_set_bus_pan** / **osc_set_bus_name** - Mute, pan, name
 
-### Sends (2 tools)
+### Sends (4 tools)
 - **osc_send_to_bus** / **osc_get_send_to_bus** - Channel send to bus (1-6)
+- **osc_send_to_fx** / **osc_get_send_to_fx** - Channel send to FX 1-4 (buses 7-10). Use `levelDb` for dB values (e.g. -20 for subtle, -12 for medium reverb)
 
 ### Main Mix (4 tools)
 - **osc_set_main_fader** / **osc_get_main_fader** / **osc_mute_main** / **osc_set_main_pan**
@@ -386,7 +389,15 @@ Some OSC commands don't require a value:
 - `/-stat/solosw` - Solo switch (no value)
 - `/-stat/rtn` - Return solo (0/1)
 
-**Note**: For X-Air, channel numbers are zero-padded (e.g. `01`, `16`). Bus numbers are 1-6 (unpadded). Effect numbers are 1-4.
+**Note**: For X-Air, channel numbers are zero-padded (e.g. `01`, `16`). Bus numbers are 1-6 (unpadded). Effect numbers are 1-4. **FX 1-4 are buses 7-10** (`/ch/{nn}/mix/07/level` through `mix/10/level`).
+
+### FX Send Level Scale (osc_send_to_fx)
+
+The `osc_send_to_fx` tool accepts `levelDb` for dB values. The X-Air FX send display uses a calibrated scale: `dB ≈ 66×log₁₀(value)+8`. Recommended levels:
+- **Very subtle**: -24 dB
+- **Subtle**: -20 dB
+- **Medium**: -12 dB
+- **A lot**: -6 dB
 
 ### Value Types
 

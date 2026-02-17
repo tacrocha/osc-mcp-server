@@ -365,6 +365,32 @@ export class OSCClient {
         this.sendCommand(path, [level]);
     }
 
+    /**
+     * Send channel to FX effect (FX 1-4 = buses 7-10).
+     * Level uses X-Air scale: 0.0 = -∞dB, 0.75 = 0dB, 1.0 = +10dB.
+     * For dB conversion: value = 0.75 * 10^(dB/40)
+     */
+    async sendToFx(channel: number, effect: number, level: number): Promise<void> {
+        if (effect < 1 || effect > 4) return;
+        const bus = 6 + effect; // FX 1→7, FX 2→8, FX 3→9, FX 4→10
+        return this.sendToBus(channel, bus, level);
+    }
+
+    async getSendToFx(channel: number, effect: number): Promise<number> {
+        if (effect < 1 || effect > 4) return 0;
+        const bus = 6 + effect;
+        return this.getSendToBus(channel, bus);
+    }
+
+    /**
+     * Convert dB to X-Air FX send level (calibrated from X-Air Edit display).
+     * Display formula: dB ≈ 66*log10(value)+8. Inverse: value = 10^((dB-8)/66)
+     */
+    static dbToLevel(db: number): number {
+        if (db <= -100) return 0;
+        return Math.max(0, Math.min(1, Math.pow(10, (db - 8) / 66)));
+    }
+
     async getSendToBus(channel: number, bus: number): Promise<number> {
         const path = `${this.getChannelPath(channel)}/mix/${bus.toString().padStart(2, "0")}/level`;
         return await this.sendAndReceive(path);

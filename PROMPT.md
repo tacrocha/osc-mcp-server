@@ -42,6 +42,9 @@ The user has access to an OSC MCP (Model Context Protocol) server that provides 
 ### Effects (effects 1-4)
 - Control 4 effects with on/off, mix level, and parameter adjustment
 
+### FX Sends (channel → FX 1-4)
+- `osc_send_to_fx` - Send channel to reverb/effects. Use `levelDb` for dB: -24 (very subtle), -20 (subtle), -12 (medium), -6 (a lot)
+
 ### Scenes (snapshots 1-64)
 - Recall scenes (1-64)
 - Save current mixer state as a scene

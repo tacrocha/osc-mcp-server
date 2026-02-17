@@ -25,7 +25,7 @@ osc-mcp/
 
 ## 🎯 Features Implemented
 
-### Mixer Control Tools (12 total):
+### Mixer Control Tools (13 highlighted):
 
 1. **osc_set_fader** - Set channel fader levels
 2. **osc_get_fader** - Get current fader levels
@@ -34,11 +34,12 @@ osc-mcp/
 5. **osc_set_eq** - Adjust 4-band parametric EQ
 6. **osc_set_gate** - Control noise gates
 7. **osc_set_compressor** - Adjust compression
-8. **osc_send_to_bus** - Control aux sends
-9. **osc_scene_recall** - Load saved scenes
-10. **osc_get_mixer_status** - Get mixer info
-11. **osc_set_main_fader** - Control main LR fader
-12. **osc_custom_command** - Send any OSC command
+8. **osc_send_to_bus** - Control aux/monitor sends
+9. **osc_send_to_fx** - Channel sends to FX (reverb, etc.) with dB levels
+10. **osc_scene_recall** - Load saved scenes
+11. **osc_get_mixer_status** - Get mixer info
+12. **osc_set_main_fader** - Control main LR fader
+13. **osc_custom_command** - Send any OSC command
 
 ## 🚀 Installation for Claude Desktop
 

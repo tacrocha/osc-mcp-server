@@ -656,6 +656,63 @@ const TOOLS: Tool[] = [
             required: ["channel", "bus"],
         },
     },
+    {
+        name: "osc_send_to_fx",
+        description:
+            "Set the send level from a channel to an FX effect (1-4). FX 1-4 = buses 7-10. Level uses X-Air scale: 0.0=-∞dB, 0.75=0dB, 1.0=+10dB. Use levelDb for dB values (e.g. -20 for subtle reverb).",
+        inputSchema: {
+            type: "object",
+            properties: {
+                channel: {
+                    type: "number",
+                    description: "Channel number (1-16)",
+                    minimum: 1,
+                    maximum: 16,
+                },
+                effect: {
+                    type: "number",
+                    description: "Effect number (1-4)",
+                    minimum: 1,
+                    maximum: 4,
+                },
+                level: {
+                    type: "number",
+                    description: "Send level 0.0-1.0 (0.75=0dB). Omit if using levelDb.",
+                    minimum: 0,
+                    maximum: 1,
+                },
+                levelDb: {
+                    type: "number",
+                    description: "Send level in dB (e.g. -20 for subtle). Takes precedence over level.",
+                    minimum: -100,
+                    maximum: 10,
+                },
+            },
+            required: ["channel", "effect"],
+        },
+    },
+    {
+        name: "osc_get_send_to_fx",
+        description: "Get the send level from a channel to an FX effect (1-4)",
+        inputSchema: {
+            type: "object",
+            properties: {
+                channel: {
+                    type: "number",
+                    description: "Channel number (1-16)",
+                    minimum: 1,
+                    maximum: 16,
+                },
+                effect: {
+                    type: "number",
+                    description: "Effect number (1-4)",
+                    minimum: 1,
+                    maximum: 4,
+                },
+            },
+            required: ["channel", "effect"],
+        },
+    },
     // ========== Main Mix ==========
     {
         name: "osc_set_main_fader",
@@ -1358,6 +1415,48 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
                         {
                             type: "text",
                             text: `Channel ${channel} send to bus ${bus} is at ${(level * 100).toFixed(1)}%`,
+                        },
+                    ],
+                };
+            }
+
+            case "osc_send_to_fx": {
+                const { channel, effect, level, levelDb } = args as {
+                    channel: number;
+                    effect: number;
+                    level?: number;
+                    levelDb?: number;
+                };
+                const sendLevel =
+                    levelDb !== undefined
+                        ? OSCClient.dbToLevel(levelDb)
+                        : level ?? 0;
+                await osc.sendToFx(channel, effect, sendLevel);
+                const dbText =
+                    levelDb !== undefined
+                        ? `${levelDb} dB`
+                        : `${(sendLevel * 100).toFixed(1)}%`;
+                return {
+                    content: [
+                        {
+                            type: "text",
+                            text: `Set channel ${channel} send to FX ${effect} at ${dbText}`,
+                        },
+                    ],
+                };
+            }
+
+            case "osc_get_send_to_fx": {
+                const { channel, effect } = args as {
+                    channel: number;
+                    effect: number;
+                };
+                const level = await osc.getSendToFx(channel, effect);
+                return {
+                    content: [
+                        {
+                            type: "text",
+                            text: `Channel ${channel} send to FX ${effect} is at ${(level * 100).toFixed(1)}%`,
                         },
                     ],
                 };
