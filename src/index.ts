@@ -1,9 +1,5 @@
 #!/usr/bin/env node
 
-import { exec, spawn } from "child_process";
-import { promisify } from "util";
-import path from "path";
-import { fileURLToPath } from "url";
 import { Server } from "@modelcontextprotocol/sdk/server/index.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import {
@@ -13,20 +9,12 @@ import {
 } from "@modelcontextprotocol/sdk/types.js";
 import { OSCClient } from "./osc-client.js";
 
-const execAsync = promisify(exec);
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-
-// Default OSC configuration
+// Default OSC configuration (X-Air uses port 10024)
 const OSC_HOST = process.env.OSC_HOST || "192.168.1.17";
-const OSC_PORT = parseInt(process.env.OSC_PORT || "10023");
+const OSC_PORT = parseInt(process.env.OSC_PORT || "10024");
 
 // Initialize OSC client
 const osc = new OSCClient(OSC_HOST, OSC_PORT);
-
-// Emulator process management
-let emulatorProcess: ReturnType<typeof spawn> | null = null;
-let emulatorPid: number | null = null;
 
 // Define available tools
 const TOOLS: Tool[] = [
@@ -39,9 +27,9 @@ const TOOLS: Tool[] = [
             properties: {
                 channel: {
                     type: "number",
-                    description: "Channel number (1-32)",
+                    description: "Channel number (1-16)",
                     minimum: 1,
-                    maximum: 32,
+                    maximum: 16,
                 },
                 level: {
                     type: "number",
@@ -61,9 +49,9 @@ const TOOLS: Tool[] = [
             properties: {
                 channel: {
                     type: "number",
-                    description: "Channel number (1-32)",
+                    description: "Channel number (1-16)",
                     minimum: 1,
-                    maximum: 32,
+                    maximum: 16,
                 },
             },
             required: ["channel"],
@@ -77,9 +65,9 @@ const TOOLS: Tool[] = [
             properties: {
                 channel: {
                     type: "number",
-                    description: "Channel number (1-32)",
+                    description: "Channel number (1-16)",
                     minimum: 1,
-                    maximum: 32,
+                    maximum: 16,
                 },
                 mute: {
                     type: "boolean",
@@ -97,9 +85,9 @@ const TOOLS: Tool[] = [
             properties: {
                 channel: {
                     type: "number",
-                    description: "Channel number (1-32)",
+                    description: "Channel number (1-16)",
                     minimum: 1,
-                    maximum: 32,
+                    maximum: 16,
                 },
             },
             required: ["channel"],
@@ -113,9 +101,9 @@ const TOOLS: Tool[] = [
             properties: {
                 channel: {
                     type: "number",
-                    description: "Channel number (1-32)",
+                    description: "Channel number (1-16)",
                     minimum: 1,
-                    maximum: 32,
+                    maximum: 16,
                 },
                 pan: {
                     type: "number",
@@ -135,9 +123,9 @@ const TOOLS: Tool[] = [
             properties: {
                 channel: {
                     type: "number",
-                    description: "Channel number (1-32)",
+                    description: "Channel number (1-16)",
                     minimum: 1,
-                    maximum: 32,
+                    maximum: 16,
                 },
             },
             required: ["channel"],
@@ -151,9 +139,9 @@ const TOOLS: Tool[] = [
             properties: {
                 channel: {
                     type: "number",
-                    description: "Channel number (1-32)",
+                    description: "Channel number (1-16)",
                     minimum: 1,
-                    maximum: 32,
+                    maximum: 16,
                 },
                 name: {
                     type: "string",
@@ -161,6 +149,65 @@ const TOOLS: Tool[] = [
                 },
             },
             required: ["channel", "name"],
+        },
+    },
+    // ========== HPF / Low Cut (Preamp) ==========
+    {
+        name: "osc_set_hpf_on",
+        description: "Enable or disable the high-pass filter (Low Cut) on a channel",
+        inputSchema: {
+            type: "object",
+            properties: {
+                channel: {
+                    type: "number",
+                    description: "Channel number (1-16)",
+                    minimum: 1,
+                    maximum: 16,
+                },
+                on: {
+                    type: "boolean",
+                    description: "True to enable Low Cut, false to disable",
+                },
+            },
+            required: ["channel", "on"],
+        },
+    },
+    {
+        name: "osc_set_hpf",
+        description: "Set the high-pass filter (Low Cut) frequency on a channel (20-400 Hz)",
+        inputSchema: {
+            type: "object",
+            properties: {
+                channel: {
+                    type: "number",
+                    description: "Channel number (1-16)",
+                    minimum: 1,
+                    maximum: 16,
+                },
+                frequencyHz: {
+                    type: "number",
+                    description: "Cutoff frequency in Hz (20-400). ~80-100 Hz for male vocals, ~100-120 Hz for female vocals",
+                    minimum: 20,
+                    maximum: 400,
+                },
+            },
+            required: ["channel", "frequencyHz"],
+        },
+    },
+    {
+        name: "osc_get_hpf",
+        description: "Get the high-pass filter (Low Cut) frequency value from a channel",
+        inputSchema: {
+            type: "object",
+            properties: {
+                channel: {
+                    type: "number",
+                    description: "Channel number (1-16)",
+                    minimum: 1,
+                    maximum: 16,
+                },
+            },
+            required: ["channel"],
         },
     },
     {
@@ -171,9 +218,9 @@ const TOOLS: Tool[] = [
             properties: {
                 channel: {
                     type: "number",
-                    description: "Channel number (1-32)",
+                    description: "Channel number (1-16)",
                     minimum: 1,
-                    maximum: 32,
+                    maximum: 16,
                 },
             },
             required: ["channel"],
@@ -188,9 +235,9 @@ const TOOLS: Tool[] = [
             properties: {
                 channel: {
                     type: "number",
-                    description: "Channel number (1-32)",
+                    description: "Channel number (1-16)",
                     minimum: 1,
-                    maximum: 32,
+                    maximum: 16,
                 },
                 band: {
                     type: "number",
@@ -216,9 +263,9 @@ const TOOLS: Tool[] = [
             properties: {
                 channel: {
                     type: "number",
-                    description: "Channel number (1-32)",
+                    description: "Channel number (1-16)",
                     minimum: 1,
-                    maximum: 32,
+                    maximum: 16,
                 },
                 band: {
                     type: "number",
@@ -238,9 +285,9 @@ const TOOLS: Tool[] = [
             properties: {
                 channel: {
                     type: "number",
-                    description: "Channel number (1-32)",
+                    description: "Channel number (1-16)",
                     minimum: 1,
-                    maximum: 32,
+                    maximum: 16,
                 },
                 band: {
                     type: "number",
@@ -266,9 +313,9 @@ const TOOLS: Tool[] = [
             properties: {
                 channel: {
                     type: "number",
-                    description: "Channel number (1-32)",
+                    description: "Channel number (1-16)",
                     minimum: 1,
-                    maximum: 32,
+                    maximum: 16,
                 },
                 band: {
                     type: "number",
@@ -294,9 +341,9 @@ const TOOLS: Tool[] = [
             properties: {
                 channel: {
                     type: "number",
-                    description: "Channel number (1-32)",
+                    description: "Channel number (1-16)",
                     minimum: 1,
-                    maximum: 32,
+                    maximum: 16,
                 },
                 on: {
                     type: "boolean",
@@ -315,9 +362,9 @@ const TOOLS: Tool[] = [
             properties: {
                 channel: {
                     type: "number",
-                    description: "Channel number (1-32)",
+                    description: "Channel number (1-16)",
                     minimum: 1,
-                    maximum: 32,
+                    maximum: 16,
                 },
                 threshold: {
                     type: "number",
@@ -337,9 +384,9 @@ const TOOLS: Tool[] = [
             properties: {
                 channel: {
                     type: "number",
-                    description: "Channel number (1-32)",
+                    description: "Channel number (1-16)",
                     minimum: 1,
-                    maximum: 32,
+                    maximum: 16,
                 },
             },
             required: ["channel"],
@@ -353,9 +400,9 @@ const TOOLS: Tool[] = [
             properties: {
                 channel: {
                     type: "number",
-                    description: "Channel number (1-32)",
+                    description: "Channel number (1-16)",
                     minimum: 1,
-                    maximum: 32,
+                    maximum: 16,
                 },
                 on: {
                     type: "boolean",
@@ -373,9 +420,9 @@ const TOOLS: Tool[] = [
             properties: {
                 channel: {
                     type: "number",
-                    description: "Channel number (1-32)",
+                    description: "Channel number (1-16)",
                     minimum: 1,
-                    maximum: 32,
+                    maximum: 16,
                 },
                 threshold: {
                     type: "number",
@@ -401,9 +448,9 @@ const TOOLS: Tool[] = [
             properties: {
                 channel: {
                     type: "number",
-                    description: "Channel number (1-32)",
+                    description: "Channel number (1-16)",
                     minimum: 1,
-                    maximum: 32,
+                    maximum: 16,
                 },
                 attack: {
                     type: "number",
@@ -423,9 +470,9 @@ const TOOLS: Tool[] = [
             properties: {
                 channel: {
                     type: "number",
-                    description: "Channel number (1-32)",
+                    description: "Channel number (1-16)",
                     minimum: 1,
-                    maximum: 32,
+                    maximum: 16,
                 },
                 release: {
                     type: "number",
@@ -445,9 +492,9 @@ const TOOLS: Tool[] = [
             properties: {
                 channel: {
                     type: "number",
-                    description: "Channel number (1-32)",
+                    description: "Channel number (1-16)",
                     minimum: 1,
-                    maximum: 32,
+                    maximum: 16,
                 },
                 on: {
                     type: "boolean",
@@ -466,9 +513,9 @@ const TOOLS: Tool[] = [
             properties: {
                 bus: {
                     type: "number",
-                    description: "Bus number (1-16)",
+                    description: "Bus number (1-6)",
                     minimum: 1,
-                    maximum: 16,
+                    maximum: 6,
                 },
                 level: {
                     type: "number",
@@ -488,9 +535,9 @@ const TOOLS: Tool[] = [
             properties: {
                 bus: {
                     type: "number",
-                    description: "Bus number (1-16)",
+                    description: "Bus number (1-6)",
                     minimum: 1,
-                    maximum: 16,
+                    maximum: 6,
                 },
             },
             required: ["bus"],
@@ -504,9 +551,9 @@ const TOOLS: Tool[] = [
             properties: {
                 bus: {
                     type: "number",
-                    description: "Bus number (1-16)",
+                    description: "Bus number (1-6)",
                     minimum: 1,
-                    maximum: 16,
+                    maximum: 6,
                 },
                 mute: {
                     type: "boolean",
@@ -524,9 +571,9 @@ const TOOLS: Tool[] = [
             properties: {
                 bus: {
                     type: "number",
-                    description: "Bus number (1-16)",
+                    description: "Bus number (1-6)",
                     minimum: 1,
-                    maximum: 16,
+                    maximum: 6,
                 },
                 pan: {
                     type: "number",
@@ -546,9 +593,9 @@ const TOOLS: Tool[] = [
             properties: {
                 bus: {
                     type: "number",
-                    description: "Bus number (1-16)",
+                    description: "Bus number (1-6)",
                     minimum: 1,
-                    maximum: 16,
+                    maximum: 6,
                 },
                 name: {
                     type: "string",
@@ -556,87 +603,6 @@ const TOOLS: Tool[] = [
                 },
             },
             required: ["bus", "name"],
-        },
-    },
-    // ========== Aux Controls ==========
-    {
-        name: "osc_set_aux_fader",
-        description: "Set the fader level for an aux output",
-        inputSchema: {
-            type: "object",
-            properties: {
-                aux: {
-                    type: "number",
-                    description: "Aux number (1-6)",
-                    minimum: 1,
-                    maximum: 6,
-                },
-                level: {
-                    type: "number",
-                    description: "Fader level (0.0 to 1.0)",
-                    minimum: 0,
-                    maximum: 1,
-                },
-            },
-            required: ["aux", "level"],
-        },
-    },
-    {
-        name: "osc_get_aux_fader",
-        description: "Get the fader level for an aux output",
-        inputSchema: {
-            type: "object",
-            properties: {
-                aux: {
-                    type: "number",
-                    description: "Aux number (1-6)",
-                    minimum: 1,
-                    maximum: 6,
-                },
-            },
-            required: ["aux"],
-        },
-    },
-    {
-        name: "osc_mute_aux",
-        description: "Mute or unmute an aux output",
-        inputSchema: {
-            type: "object",
-            properties: {
-                aux: {
-                    type: "number",
-                    description: "Aux number (1-6)",
-                    minimum: 1,
-                    maximum: 6,
-                },
-                mute: {
-                    type: "boolean",
-                    description: "True to mute, false to unmute",
-                },
-            },
-            required: ["aux", "mute"],
-        },
-    },
-    {
-        name: "osc_set_aux_pan",
-        description: "Set the pan position for an aux output",
-        inputSchema: {
-            type: "object",
-            properties: {
-                aux: {
-                    type: "number",
-                    description: "Aux number (1-6)",
-                    minimum: 1,
-                    maximum: 6,
-                },
-                pan: {
-                    type: "number",
-                    description: "Pan position (-1.0 to 1.0)",
-                    minimum: -1,
-                    maximum: 1,
-                },
-            },
-            required: ["aux", "pan"],
         },
     },
     // ========== Sends ==========
@@ -648,15 +614,15 @@ const TOOLS: Tool[] = [
             properties: {
                 channel: {
                     type: "number",
-                    description: "Channel number (1-32)",
+                    description: "Channel number (1-16)",
                     minimum: 1,
-                    maximum: 32,
+                    maximum: 16,
                 },
                 bus: {
                     type: "number",
-                    description: "Mix bus number (1-16)",
+                    description: "Mix bus number (1-6)",
                     minimum: 1,
-                    maximum: 16,
+                    maximum: 6,
                 },
                 level: {
                     type: "number",
@@ -676,46 +642,18 @@ const TOOLS: Tool[] = [
             properties: {
                 channel: {
                     type: "number",
-                    description: "Channel number (1-32)",
-                    minimum: 1,
-                    maximum: 32,
-                },
-                bus: {
-                    type: "number",
-                    description: "Mix bus number (1-16)",
+                    description: "Channel number (1-16)",
                     minimum: 1,
                     maximum: 16,
                 },
-            },
-            required: ["channel", "bus"],
-        },
-    },
-    {
-        name: "osc_send_to_aux",
-        description: "Set the send level from a channel to an aux output",
-        inputSchema: {
-            type: "object",
-            properties: {
-                channel: {
+                bus: {
                     type: "number",
-                    description: "Channel number (1-32)",
-                    minimum: 1,
-                    maximum: 32,
-                },
-                aux: {
-                    type: "number",
-                    description: "Aux number (1-6)",
+                    description: "Mix bus number (1-6)",
                     minimum: 1,
                     maximum: 6,
                 },
-                level: {
-                    type: "number",
-                    description: "Send level (0.0 to 1.0)",
-                    minimum: 0,
-                    maximum: 1,
-                },
             },
-            required: ["channel", "aux", "level"],
+            required: ["channel", "bus"],
         },
     },
     // ========== Main Mix ==========
@@ -773,49 +711,6 @@ const TOOLS: Tool[] = [
             required: ["pan"],
         },
     },
-    // ========== Matrix ==========
-    {
-        name: "osc_set_matrix_fader",
-        description: "Set the fader level for a matrix output",
-        inputSchema: {
-            type: "object",
-            properties: {
-                matrix: {
-                    type: "number",
-                    description: "Matrix number (1-6)",
-                    minimum: 1,
-                    maximum: 6,
-                },
-                level: {
-                    type: "number",
-                    description: "Fader level (0.0 to 1.0)",
-                    minimum: 0,
-                    maximum: 1,
-                },
-            },
-            required: ["matrix", "level"],
-        },
-    },
-    {
-        name: "osc_mute_matrix",
-        description: "Mute or unmute a matrix output",
-        inputSchema: {
-            type: "object",
-            properties: {
-                matrix: {
-                    type: "number",
-                    description: "Matrix number (1-6)",
-                    minimum: 1,
-                    maximum: 6,
-                },
-                mute: {
-                    type: "boolean",
-                    description: "True to mute, false to unmute",
-                },
-            },
-            required: ["matrix", "mute"],
-        },
-    },
     // ========== Effects ==========
     {
         name: "osc_set_effect_on",
@@ -825,9 +720,9 @@ const TOOLS: Tool[] = [
             properties: {
                 effect: {
                     type: "number",
-                    description: "Effect number (1-8; X-Air: 1-4 only)",
+                    description: "Effect number (1-4)",
                     minimum: 1,
-                    maximum: 8,
+                    maximum: 4,
                 },
                 on: {
                     type: "boolean",
@@ -845,9 +740,9 @@ const TOOLS: Tool[] = [
             properties: {
                 effect: {
                     type: "number",
-                    description: "Effect number (1-8; X-Air: 1-4 only)",
+                    description: "Effect number (1-4)",
                     minimum: 1,
-                    maximum: 8,
+                    maximum: 4,
                 },
                 mix: {
                     type: "number",
@@ -867,9 +762,9 @@ const TOOLS: Tool[] = [
             properties: {
                 effect: {
                     type: "number",
-                    description: "Effect number (1-8; X-Air: 1-4 only)",
+                    description: "Effect number (1-4)",
                     minimum: 1,
-                    maximum: 8,
+                    maximum: 4,
                 },
                 param: {
                     type: "number",
@@ -896,15 +791,15 @@ const TOOLS: Tool[] = [
             properties: {
                 channel: {
                     type: "number",
-                    description: "Channel number (1-32)",
+                    description: "Channel number (1-16)",
                     minimum: 1,
-                    maximum: 32,
+                    maximum: 16,
                 },
                 source: {
                     type: "number",
-                    description: "Source number (0-63)",
+                    description: "Source number (0-15 for X-Air input sources)",
                     minimum: 0,
-                    maximum: 63,
+                    maximum: 15,
                 },
             },
             required: ["channel", "source"],
@@ -918,9 +813,9 @@ const TOOLS: Tool[] = [
             properties: {
                 channel: {
                     type: "number",
-                    description: "Channel number (1-32)",
+                    description: "Channel number (1-16)",
                     minimum: 1,
-                    maximum: 32,
+                    maximum: 16,
                 },
             },
             required: ["channel"],
@@ -935,9 +830,9 @@ const TOOLS: Tool[] = [
             properties: {
                 scene: {
                     type: "number",
-                    description: "Scene number (1-100; X-Air: 1-64)",
+                    description: "Scene number (1-64)",
                     minimum: 1,
-                    maximum: 100,
+                    maximum: 64,
                 },
             },
             required: ["scene"],
@@ -951,9 +846,9 @@ const TOOLS: Tool[] = [
             properties: {
                 scene: {
                     type: "number",
-                    description: "Scene number (1-100; X-Air: 1-64)",
+                    description: "Scene number (1-64)",
                     minimum: 1,
-                    maximum: 100,
+                    maximum: 64,
                 },
                 name: {
                     type: "string",
@@ -971,9 +866,9 @@ const TOOLS: Tool[] = [
             properties: {
                 scene: {
                     type: "number",
-                    description: "Scene number (1-100; X-Air: 1-64)",
+                    description: "Scene number (1-64)",
                     minimum: 1,
-                    maximum: 100,
+                    maximum: 64,
                 },
             },
             required: ["scene"],
@@ -1004,41 +899,6 @@ const TOOLS: Tool[] = [
                 },
             },
             required: ["address"],
-        },
-    },
-    // ========== Application Controls ==========
-    {
-        name: "osc_open_x32_edit",
-        description:
-            "Open the X32-Edit application to manually control the mixer or verify commands",
-        inputSchema: {
-            type: "object",
-            properties: {},
-        },
-    },
-    {
-        name: "osc_start_emulator",
-        description:
-            "Start the local X32 emulator server from the emulator/X32 binary so you can test without a physical mixer",
-        inputSchema: {
-            type: "object",
-            properties: {},
-        },
-    },
-    {
-        name: "osc_stop_emulator",
-        description: "Stop the running X32 emulator server",
-        inputSchema: {
-            type: "object",
-            properties: {},
-        },
-    },
-    {
-        name: "osc_get_emulator_status",
-        description: "Check if the X32 emulator is currently running",
-        inputSchema: {
-            type: "object",
-            properties: {},
         },
     },
 ];
@@ -1171,6 +1031,48 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
                         {
                             type: "text",
                             text: `Channel ${channel} name is "${name}"`,
+                        },
+                    ],
+                };
+            }
+
+            case "osc_set_hpf_on": {
+                const { channel, on } = args as { channel: number; on: boolean };
+                await osc.setHPFOn(channel, on);
+                return {
+                    content: [
+                        {
+                            type: "text",
+                            text: `Channel ${channel} Low Cut (HPF) ${on ? "enabled" : "disabled"}`,
+                        },
+                    ],
+                };
+            }
+
+            case "osc_set_hpf": {
+                const { channel, frequencyHz } = args as {
+                    channel: number;
+                    frequencyHz: number;
+                };
+                await osc.setHPF(channel, frequencyHz);
+                return {
+                    content: [
+                        {
+                            type: "text",
+                            text: `Set channel ${channel} Low Cut (HPF) to ${frequencyHz} Hz`,
+                        },
+                    ],
+                };
+            }
+
+            case "osc_get_hpf": {
+                const { channel } = args as { channel: number };
+                const hz = await osc.getHPFHz(channel);
+                return {
+                    content: [
+                        {
+                            type: "text",
+                            text: `Channel ${channel} Low Cut (HPF) is at ${Math.round(hz)} Hz`,
                         },
                     ],
                 };
@@ -1427,61 +1329,6 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
                 };
             }
 
-            // ========== Aux Controls ==========
-            case "osc_set_aux_fader": {
-                const { aux, level } = args as { aux: number; level: number };
-                await osc.setAuxFader(aux, level);
-                return {
-                    content: [
-                        {
-                            type: "text",
-                            text: `Set aux ${aux} fader to ${(level * 100).toFixed(1)}%`,
-                        },
-                    ],
-                };
-            }
-
-            case "osc_get_aux_fader": {
-                const { aux } = args as { aux: number };
-                const level = await osc.getAuxFader(aux);
-                return {
-                    content: [
-                        {
-                            type: "text",
-                            text: `Aux ${aux} fader is at ${(level * 100).toFixed(1)}%`,
-                        },
-                    ],
-                };
-            }
-
-            case "osc_mute_aux": {
-                const { aux, mute } = args as { aux: number; mute: boolean };
-                await osc.muteAux(aux, mute);
-                return {
-                    content: [
-                        {
-                            type: "text",
-                            text: `Aux ${aux} ${mute ? "muted" : "unmuted"}`,
-                        },
-                    ],
-                };
-            }
-
-            case "osc_set_aux_pan": {
-                const { aux, pan } = args as { aux: number; pan: number };
-                await osc.setAuxPan(aux, pan);
-                const panText =
-                    pan < -0.1 ? "left" : pan > 0.1 ? "right" : "center";
-                return {
-                    content: [
-                        {
-                            type: "text",
-                            text: `Set aux ${aux} pan to ${panText} (${pan.toFixed(2)})`,
-                        },
-                    ],
-                };
-            }
-
             // ========== Sends ==========
             case "osc_send_to_bus": {
                 const { channel, bus, level } = args as {
@@ -1511,23 +1358,6 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
                         {
                             type: "text",
                             text: `Channel ${channel} send to bus ${bus} is at ${(level * 100).toFixed(1)}%`,
-                        },
-                    ],
-                };
-            }
-
-            case "osc_send_to_aux": {
-                const { channel, aux, level } = args as {
-                    channel: number;
-                    aux: number;
-                    level: number;
-                };
-                await osc.sendToAux(channel, aux, level);
-                return {
-                    content: [
-                        {
-                            type: "text",
-                            text: `Set channel ${channel} send to aux ${aux} at ${(level * 100).toFixed(1)}%`,
                         },
                     ],
                 };
@@ -1582,39 +1412,6 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
                         {
                             type: "text",
                             text: `Set main LR pan to ${panText} (${pan.toFixed(2)})`,
-                        },
-                    ],
-                };
-            }
-
-            // ========== Matrix ==========
-            case "osc_set_matrix_fader": {
-                const { matrix, level } = args as {
-                    matrix: number;
-                    level: number;
-                };
-                await osc.setMatrixFader(matrix, level);
-                return {
-                    content: [
-                        {
-                            type: "text",
-                            text: `Set matrix ${matrix} fader to ${(level * 100).toFixed(1)}%`,
-                        },
-                    ],
-                };
-            }
-
-            case "osc_mute_matrix": {
-                const { matrix, mute } = args as {
-                    matrix: number;
-                    mute: boolean;
-                };
-                await osc.muteMatrix(matrix, mute);
-                return {
-                    content: [
-                        {
-                            type: "text",
-                            text: `Matrix ${matrix} ${mute ? "muted" : "unmuted"}`,
                         },
                     ],
                 };
@@ -1771,248 +1568,6 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
                         },
                     ],
                 };
-            }
-
-            // ========== Application Controls ==========
-            case "osc_open_x32_edit": {
-                try {
-                    await execAsync("open /Applications/X32-Edit.app");
-                    return {
-                        content: [
-                            {
-                                type: "text",
-                                text: "X32-Edit application opened successfully. You can now manually control the mixer or verify that commands were applied.",
-                            },
-                        ],
-                    };
-                } catch (error) {
-                    return {
-                        content: [
-                            {
-                                type: "text",
-                                text: `Failed to open X32-Edit: ${error instanceof Error ? error.message : String(error)}. Make sure X32-Edit.app is installed at /Applications/X32-Edit.app`,
-                            },
-                        ],
-                        isError: true,
-                    };
-                }
-            }
-
-            case "osc_start_emulator": {
-                try {
-                    // Check if emulator is already running
-                    if (emulatorPid !== null) {
-                        try {
-                            // Check if process is still alive (signal 0 doesn't kill, just checks)
-                            process.kill(emulatorPid, 0);
-                            return {
-                                content: [
-                                    {
-                                        type: "text",
-                                        text: `X32 emulator is already running (PID: ${emulatorPid}). No need to start it again.`,
-                                    },
-                                ],
-                            };
-                        } catch {
-                            // Process doesn't exist, reset variables
-                            emulatorProcess = null;
-                            emulatorPid = null;
-                        }
-                    }
-
-                    const emulatorPath = path.resolve(__dirname, "../emulator/X32");
-
-                    const child = spawn(emulatorPath, [], {
-                        detached: true,
-                        stdio: "ignore",
-                    });
-
-                    emulatorProcess = child;
-                    emulatorPid = child.pid || null;
-
-                    child.unref();
-
-                    // Wait a moment to check if process started successfully
-                    await new Promise((resolve) => setTimeout(resolve, 500));
-
-                    // Verify process is still running
-                    if (emulatorPid !== null) {
-                        try {
-                            process.kill(emulatorPid, 0);
-                            return {
-                                content: [
-                                    {
-                                        type: "text",
-                                        text: `X32 emulator started successfully (PID: ${emulatorPid}) from ${emulatorPath}. It is now running in the background so you can test without connecting to a physical mixer.`,
-                                    },
-                                ],
-                            };
-                        } catch {
-                            return {
-                                content: [
-                                    {
-                                        type: "text",
-                                        text: `X32 emulator process started but appears to have exited immediately. Check if the emulator binary exists at ${emulatorPath} and is executable (chmod +x emulator/X32).`,
-                                    },
-                                ],
-                                isError: true,
-                            };
-                        }
-                    } else {
-                        return {
-                            content: [
-                                {
-                                    type: "text",
-                                    text: `Failed to get PID from emulator process. The emulator may not have started correctly.`,
-                                },
-                            ],
-                            isError: true,
-                        };
-                    }
-                } catch (error) {
-                    emulatorProcess = null;
-                    emulatorPid = null;
-                    return {
-                        content: [
-                            {
-                                type: "text",
-                                text: `Failed to start X32 emulator: ${
-                                    error instanceof Error ? error.message : String(error)
-                                }. Make sure the emulator binary exists at emulator/X32 and is executable (chmod +x emulator/X32).`,
-                            },
-                        ],
-                        isError: true,
-                    };
-                }
-            }
-
-            case "osc_stop_emulator": {
-                try {
-                    if (emulatorPid === null || emulatorProcess === null) {
-                        return {
-                            content: [
-                                {
-                                    type: "text",
-                                    text: "X32 emulator is not running. Nothing to stop.",
-                                },
-                            ],
-                        };
-                    }
-
-                    // Check if process is still alive
-                    try {
-                        process.kill(emulatorPid, 0);
-                    } catch {
-                        // Process already dead
-                        emulatorProcess = null;
-                        emulatorPid = null;
-                        return {
-                            content: [
-                                {
-                                    type: "text",
-                                    text: "X32 emulator process was not running (may have already stopped).",
-                                },
-                            ],
-                        };
-                    }
-
-                    // Try to kill the process gracefully first (SIGTERM)
-                    try {
-                        process.kill(emulatorPid, "SIGTERM");
-                        // Wait a bit for graceful shutdown
-                        await new Promise((resolve) => setTimeout(resolve, 1000));
-
-                        // Check if still running
-                        try {
-                            process.kill(emulatorPid, 0);
-                            // Still running, force kill
-                            process.kill(emulatorPid, "SIGKILL");
-                        } catch {
-                            // Process terminated successfully
-                        }
-                    } catch (killError) {
-                        // If kill fails, process might already be dead
-                        try {
-                            process.kill(emulatorPid, 0);
-                            // Still alive, try force kill
-                            process.kill(emulatorPid, "SIGKILL");
-                        } catch {
-                            // Process is dead
-                        }
-                    }
-
-                    emulatorProcess = null;
-                    emulatorPid = null;
-
-                    return {
-                        content: [
-                            {
-                                type: "text",
-                                text: "X32 emulator stopped successfully.",
-                            },
-                        ],
-                    };
-                } catch (error) {
-                    return {
-                        content: [
-                            {
-                                type: "text",
-                                text: `Failed to stop X32 emulator: ${error instanceof Error ? error.message : String(error)}`,
-                            },
-                        ],
-                        isError: true,
-                    };
-                }
-            }
-
-            case "osc_get_emulator_status": {
-                try {
-                    if (emulatorPid === null) {
-                        return {
-                            content: [
-                                {
-                                    type: "text",
-                                    text: "X32 emulator is not running.",
-                                },
-                            ],
-                        };
-                    }
-
-                    // Check if process is still alive
-                    try {
-                        process.kill(emulatorPid, 0);
-                        return {
-                            content: [
-                                {
-                                    type: "text",
-                                    text: `X32 emulator is running (PID: ${emulatorPid}).`,
-                                },
-                            ],
-                        };
-                    } catch {
-                        // Process is dead, reset variables
-                        emulatorProcess = null;
-                        emulatorPid = null;
-                        return {
-                            content: [
-                                {
-                                    type: "text",
-                                    text: "X32 emulator is not running (process has terminated).",
-                                },
-                            ],
-                        };
-                    }
-                } catch (error) {
-                    return {
-                        content: [
-                            {
-                                type: "text",
-                                text: `Error checking emulator status: ${error instanceof Error ? error.message : String(error)}`,
-                            },
-                        ],
-                        isError: true,
-                    };
-                }
             }
 
             default:

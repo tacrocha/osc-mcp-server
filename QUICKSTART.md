@@ -40,7 +40,7 @@ Copy the contents from `claude_desktop_config.json` in this repository, or add t
       ],
       "env": {
         "OSC_HOST": "192.168.1.70",
-        "OSC_PORT": "10023"
+        "OSC_PORT": "10024"
       }
     }
   }
@@ -50,7 +50,7 @@ Copy the contents from `claude_desktop_config.json` in this repository, or add t
 **Important**: 
 - Replace `/path/to/osc-mcp/dist/index.js` with the actual path to your installation
 - Replace `192.168.1.70` with your mixer's actual IP address
-- The default OSC port is `10023` (usually doesn't need to be changed)
+- The default OSC port for X-Air is `10024`
 
 ### 4. Restart Claude Desktop
 
@@ -136,7 +136,7 @@ Send custom command to /ch/05/mix/fader with value 0.8
 
 2. **Verify the mixer is on** and connected to the same network
 
-3. **Check firewall settings** - ensure UDP port 10023 is not blocked
+3. **Check firewall settings** - ensure UDP port 10024 is not blocked
 
 ### "Tools not appearing in Claude"
 
@@ -172,7 +172,7 @@ For reliability, set a static IP on your mixer:
 ## Next Steps
 
 - Read the full [README.md](README.md) for detailed documentation
-- Check the [Behringer X32 OSC Protocol](https://wiki.munichmakerlab.de/images/1/17/UNOFFICIAL_X32_OSC_REMOTE_PROTOCOL_%281%29.pdf) for advanced commands
+- Check the [X-Air OSC reference](https://behringer.world/wiki/doku.php?id=x-air_osc) for advanced commands
 - Experiment with different commands in Claude Desktop!
 
 ## Support

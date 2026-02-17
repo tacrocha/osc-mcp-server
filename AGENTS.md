@@ -34,7 +34,7 @@ Claude Desktop is the official desktop application from Anthropic that supports 
       ],
       "env": {
         "OSC_HOST": "192.168.1.70",
-        "OSC_PORT": "10023"
+        "OSC_PORT": "10024"
       }
     }
   }
@@ -44,7 +44,7 @@ Claude Desktop is the official desktop application from Anthropic that supports 
 3. **Replace the path** with your actual project path:
    - Update `/path/to/osc-mcp/dist/index.js` to your actual path
    - Update `OSC_HOST` with your mixer's IP address
-   - Update `OSC_PORT` if your mixer uses a different OSC port (default is 10023)
+   - Update `OSC_PORT` if your mixer uses a different OSC port (default is 10024 for X-Air)
 
 4. **Restart Claude Desktop** completely (quit and reopen)
 
@@ -91,7 +91,7 @@ Cline is a VS Code extension that brings AI assistance with MCP support.
       ],
       "env": {
         "OSC_HOST": "192.168.1.70",
-        "OSC_PORT": "10023"
+        "OSC_PORT": "10024"
       }
     }
   }
@@ -134,7 +134,7 @@ Continue is an open-source autocomplete and chat tool for VS Code with MCP suppo
       ],
       "env": {
         "OSC_HOST": "192.168.1.70",
-        "OSC_PORT": "10023"
+        "OSC_PORT": "10024"
       }
     }
   }
@@ -163,7 +163,7 @@ Most MCP-compatible agents use a similar configuration format. The basic structu
       ],
       "env": {
         "OSC_HOST": "YOUR_MIXER_IP",
-        "OSC_PORT": "10023"
+        "OSC_PORT": "10024"
       }
     }
   }
@@ -235,9 +235,9 @@ Once configured in your agent:
 
 **Solutions**:
 - Verify `OSC_HOST` is correct (ping the IP address)
-- Check `OSC_PORT` matches your mixer's OSC port (default: 10023)
+- Check `OSC_PORT` matches your mixer's OSC port (default: 10024 for X-Air)
 - Ensure OSC is enabled on the mixer
-- Check firewall settings allow UDP traffic on port 10023
+- Check firewall settings allow UDP traffic on port 10024
 - Verify network connectivity: `ping YOUR_MIXER_IP`
 
 ### Tools Not Appearing
@@ -292,7 +292,7 @@ If you need to control multiple mixers, you can configure multiple MCP servers:
       "args": ["/path/to/osc-mcp/dist/index.js"],
       "env": {
         "OSC_HOST": "192.168.1.70",
-        "OSC_PORT": "10023"
+        "OSC_PORT": "10024"
       }
     },
     "osc-monitor": {
@@ -300,7 +300,7 @@ If you need to control multiple mixers, you can configure multiple MCP servers:
       "args": ["/path/to/osc-mcp/dist/index.js"],
       "env": {
         "OSC_HOST": "192.168.1.71",
-        "OSC_PORT": "10023"
+        "OSC_PORT": "10024"
       }
     }
   }
@@ -319,7 +319,7 @@ If Node.js is not in your PATH, specify the full path:
       "args": ["/path/to/osc-mcp/dist/index.js"],
       "env": {
         "OSC_HOST": "192.168.1.70",
-        "OSC_PORT": "10023"
+        "OSC_PORT": "10024"
       }
     }
   }
@@ -338,7 +338,7 @@ To enable debug logging, add `NODE_ENV=development`:
       "args": ["/path/to/osc-mcp/dist/index.js"],
       "env": {
         "OSC_HOST": "192.168.1.70",
-        "OSC_PORT": "10023",
+        "OSC_PORT": "10024",
         "NODE_ENV": "development"
       }
     }

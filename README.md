@@ -1,21 +1,19 @@
 # OSC MCP Server
 
-A Model Context Protocol (MCP) server for controlling digital mixers (Behringer X32, Midas M32, etc.) via OSC (Open Sound Control). This allows you to control your mixer through chat commands in Claude Desktop.
+A Model Context Protocol (MCP) server for controlling **X-Air family** digital mixers (Behringer XR12, XR16, XR18; Midas MR18) via OSC (Open Sound Control). Control your mixer through chat commands in Claude Desktop or other MCP-compatible agents.
 
 ## Features
 
-- 🎚️ **Fader Control**: Set and get fader levels for all channels, buses, aux, matrix, and main LR
-- 🔇 **Mute/Unmute**: Control muting for channels, buses, aux, matrix, and main mix
-- 🎛️ **Pan Control**: Adjust stereo positioning for channels, buses, aux, and main mix
+- 🎚️ **Fader Control**: Set and get fader levels for channels (1-16), buses (1-6), and main LR
+- 🔇 **Mute/Unmute**: Control muting for channels, buses, and main mix
+- 🎛️ **Pan Control**: Adjust stereo positioning for channels, buses, and main mix
 - 🎵 **EQ Control**: Full 4-band parametric EQ with frequency, Q, gain, and on/off control
 - 🎚️ **Dynamics**: Complete gate and compressor control with attack, release, threshold, and ratio
-- 🔊 **Aux Sends**: Control sends from channels to mix buses and aux outputs
-- 📸 **Scenes**: Recall, save, and manage scenes with custom names
-- 🎛️ **Bus Control**: Full control over mix buses (1-16) with faders, pan, mute, and naming
-- 🔊 **Aux Control**: Control aux outputs (1-6) with faders, pan, and mute
-- 🎚️ **Matrix Control**: Control matrix outputs (1-6) with faders and mute
-- 🎵 **Effects**: Control effects (1-8) with on/off, mix, and parameter adjustment
-- 🔌 **Routing**: Configure channel input sources
+- 🔊 **Bus Sends**: Control sends from channels to mix buses (1-6)
+- 📸 **Scenes**: Recall, save, and manage snapshots (1-64) with custom names
+- 🎛️ **Bus Control**: Full control over mix buses 1-6 with faders, pan, mute, and naming
+- 🎵 **Effects**: Control effects 1-4 with on/off, mix, and parameter adjustment
+- 🔌 **Routing**: Configure channel input sources (0-15)
 - 📝 **Naming**: Set and get names for channels and buses
 - 🔧 **Custom Commands**: Send any OSC command to the mixer
 - 📊 **Status Monitoring**: Get mixer status and information
@@ -25,8 +23,8 @@ A Model Context Protocol (MCP) server for controlling digital mixers (Behringer 
 ### Prerequisites
 
 - Node.js 18 or higher
-- A digital mixer (Behringer X32, Midas M32, etc.) on your network
-- Claude Desktop app
+- An X-Air family mixer (Behringer XR12, XR16, XR18; Midas MR18) on your network
+- Claude Desktop app (or another MCP-compatible agent)
 
 ### Setup
 
@@ -49,19 +47,20 @@ npm run build
 
 ### Supported mixers and limits
 
-- **X32 / M32**: Full feature set (channels 1–32, buses 1–16, aux 1–6, matrix 1–6, effects 1–8, scenes 1–100).
-- **X-Air** (XR12, XR16, XR18, MR18): Channels, buses, main LR, EQ, dynamics, effects **1–4**, scenes **1–64**. No matrix or aux control. **Aux getters** (`osc_get_aux_fader`, etc.) return a placeholder value (e.g. 0.75) on X-Air—they are not read from the mixer. **Scene names** (`osc_get_scene_name`) return a value only when that scene is the current snapshot; otherwise they return an empty string. Use `osc_get_mixer_status` to see `effectsRange` and `scenesRange` when connected to X-Air.
+This server supports **X-Air family only** (Behringer XR12, XR16, XR18; Midas MR18):
+
+- **Channels**: 1–16
+- **Buses**: 1–6
+- **Effects**: 1–4
+- **Scenes (snapshots)**: 1–64
+- **Channel input source**: 0–15 (X-Air `insrc`)
+
+Scene names (`osc_get_scene_name`) return a value only when that scene is the current snapshot; otherwise they return an empty string.
 
 ### Environment Variables
 
-You can configure the OSC connection using environment variables:
-
-- `OSC_HOST`: IP address of your mixer (default: `192.168.1.70`)
-- `OSC_PORT`: OSC port of your mixer (default: `10023`)
-  - **X32/M32**: use port `10023`
-  - **XR12/XR16/XR18/MR18 (X-Air)**: use port `10024`
-
-The server **auto-detects** the mixer family (X32 vs X-Air) at connection time by querying `/xinfo` or `/info`; no environment variable is needed.
+- `OSC_HOST`: IP address of your X-Air mixer (default: `192.168.1.17`)
+- `OSC_PORT`: OSC port (default: `10024` for X-Air)
 
 ### Claude Desktop Configuration
 
@@ -79,7 +78,7 @@ Add the following to your Claude Desktop configuration file:
       ],
       "env": {
         "OSC_HOST": "192.168.1.70",
-        "OSC_PORT": "10023"
+        "OSC_PORT": "10024"
       }
     }
   }
@@ -103,7 +102,6 @@ Once configured in Claude Desktop, you can use natural language to control your 
 - "What's the current level of channel 5?"
 - "Set the main fader to 80%"
 - "Set bus 3 fader to 60%"
-- "What's the aux 2 fader level?"
 
 ### Muting
 - "Mute channel 3"
@@ -131,10 +129,9 @@ Once configured in Claude Desktop, you can use natural language to control your 
 - "Set channel 4 compressor release to 30%"
 - "Enable gate on channel 5"
 
-### Aux Sends
+### Bus Sends
 - "Send channel 1 to bus 3 at 50%"
 - "What's the send level from channel 2 to bus 5?"
-- "Send channel 4 to aux 2 at 75%"
 
 ### Bus Control
 - "Set bus 1 fader to 70%"
@@ -166,80 +163,48 @@ Once configured in Claude Desktop, you can use natural language to control your 
 - "Send OSC command /ch/01/config/name with value 'Vocals'"
 - "Send OSC command /ch/05/mix/fader with value 0.75"
 - "Send OSC command /bus/03/mix/on with value 1"
-- "Send OSC command /fx/01/on with value 1"
+- "Send OSC command /fx/1/insert with value 1"
 
 ## Available Tools
 
-The MCP server exposes **50+ tools** for comprehensive mixer control:
+The MCP server exposes **39 tools** for X-Air mixer control. Limits: channels 1-16, buses 1-6, effects 1-4, scenes 1-64.
 
 ### Channel Controls (9 tools)
-1. **osc_set_fader** - Set channel fader level (0.0-1.0)
-2. **osc_get_fader** - Get current channel fader level
-3. **osc_mute_channel** - Mute/unmute a channel
-4. **osc_get_mute** - Get mute status of a channel
-5. **osc_set_pan** - Set channel pan (-1.0 to 1.0)
-6. **osc_get_pan** - Get channel pan position
-7. **osc_set_channel_name** - Set channel name
-8. **osc_get_channel_name** - Get channel name
-9. **osc_set_channel_source** / **osc_get_channel_source** - Configure input source
+- **osc_set_fader** / **osc_get_fader** - Channel fader level (0.0-1.0)
+- **osc_mute_channel** / **osc_get_mute** - Mute/unmute
+- **osc_set_pan** / **osc_get_pan** - Pan (-1.0 to 1.0)
+- **osc_set_channel_name** / **osc_get_channel_name** - Channel name
+- **osc_set_channel_source** / **osc_get_channel_source** - Input source (0-15)
 
 ### EQ Controls (5 tools)
-10. **osc_set_eq** - Set EQ band gain (-15dB to +15dB)
-11. **osc_get_eq** - Get EQ band gain
-12. **osc_set_eq_frequency** - Set EQ band frequency
-13. **osc_set_eq_q** - Set EQ band Q factor
-14. **osc_set_eq_on** - Enable/disable EQ
+- **osc_set_eq** / **osc_get_eq** - EQ band gain (-15dB to +15dB)
+- **osc_set_eq_frequency** - EQ band frequency
+- **osc_set_eq_q** - EQ band Q factor
+- **osc_set_eq_on** - Enable/disable EQ
 
 ### Dynamics Controls (7 tools)
-15. **osc_set_gate** - Set gate threshold (-80dB to 0dB)
-16. **osc_get_gate** - Get gate threshold
-17. **osc_set_gate_on** - Enable/disable gate
-18. **osc_set_compressor** - Set compressor threshold and ratio
-19. **osc_set_compressor_attack** - Set compressor attack time
-20. **osc_set_compressor_release** - Set compressor release time
-21. **osc_set_compressor_on** - Enable/disable compressor
+- **osc_set_gate** / **osc_get_gate** / **osc_set_gate_on** - Gate
+- **osc_set_compressor** / **osc_set_compressor_attack** / **osc_set_compressor_release** / **osc_set_compressor_on** - Compressor
 
 ### Bus Controls (5 tools)
-22. **osc_set_bus_fader** - Set bus fader level
-23. **osc_get_bus_fader** - Get bus fader level
-24. **osc_mute_bus** - Mute/unmute a bus
-25. **osc_set_bus_pan** - Set bus pan position
-26. **osc_set_bus_name** - Set bus name
+- **osc_set_bus_fader** / **osc_get_bus_fader** - Bus fader (buses 1-6)
+- **osc_mute_bus** / **osc_set_bus_pan** / **osc_set_bus_name** - Mute, pan, name
 
-### Aux Controls (4 tools)
-27. **osc_set_aux_fader** - Set aux fader level
-28. **osc_get_aux_fader** - Get aux fader level
-29. **osc_mute_aux** - Mute/unmute an aux output
-30. **osc_set_aux_pan** - Set aux pan position
-
-### Sends (3 tools)
-31. **osc_send_to_bus** - Set send level from channel to bus
-32. **osc_get_send_to_bus** - Get send level from channel to bus
-33. **osc_send_to_aux** - Set send level from channel to aux
+### Sends (2 tools)
+- **osc_send_to_bus** / **osc_get_send_to_bus** - Channel send to bus (1-6)
 
 ### Main Mix (4 tools)
-34. **osc_set_main_fader** - Set main LR fader level
-35. **osc_get_main_fader** - Get main LR fader level
-36. **osc_mute_main** - Mute/unmute main LR mix
-37. **osc_set_main_pan** - Set main LR pan position
-
-### Matrix (2 tools)
-38. **osc_set_matrix_fader** - Set matrix fader level
-39. **osc_mute_matrix** - Mute/unmute a matrix output
+- **osc_set_main_fader** / **osc_get_main_fader** / **osc_mute_main** / **osc_set_main_pan**
 
 ### Effects (3 tools)
-40. **osc_set_effect_on** - Enable/disable an effect
-41. **osc_set_effect_mix** - Set effect mix level
-42. **osc_set_effect_param** - Set effect parameter value
+- **osc_set_effect_on** / **osc_set_effect_mix** / **osc_set_effect_param** - Effects 1-4
 
 ### Scenes (3 tools)
-43. **osc_scene_recall** - Recall a saved scene (1-100)
-44. **osc_scene_save** - Save current mixer state as a scene
-45. **osc_get_scene_name** - Get scene name
+- **osc_scene_recall** / **osc_scene_save** / **osc_get_scene_name** - Snapshots 1-64
 
 ### Status & Custom (2 tools)
-46. **osc_get_mixer_status** - Get mixer status and info
-47. **osc_custom_command** - Send custom OSC command
+- **osc_get_mixer_status** - Mixer status and info
+- **osc_custom_command** - Send custom OSC command
 
 ## Technical Details
 
@@ -248,34 +213,16 @@ The MCP server exposes **50+ tools** for comprehensive mixer control:
 - **osc-js** - OSC protocol implementation (v2.4.1)
 - **TypeScript** - Type-safe development
 
-### OSC Communication:
+### OSC Communication
 - Protocol: UDP
-- Default Port: 10023
+- Default port: 10024 (X-Air)
 - Bidirectional communication with mixer
-- Automatic connection keep-alive (/xremote every 9 seconds)
+- Connection keep-alive (/xremote every 9 seconds)
 - Uses `osc-js` library with DatagramPlugin for UDP communication
 
-### Supported Mixer Models
+### Supported mixers
 
-- **X32 family** (port 10023): Behringer X32, X32 Compact, X32 Producer, X32 Rack; Midas M32
 - **X-Air family** (port 10024): Behringer XR12, XR16, XR18; Midas MR18
-
-Mixer family is **auto-detected** when connecting; the server uses the correct OSC paths for each family.
-
-### Supported features by family
-
-| Feature | X32 / M32 | X-Air (XR12/XR16/XR18/MR18) |
-|--------|-----------|----------------------------|
-| Channels (fader, mute, pan, name, color) | Yes | Yes |
-| EQ, gate, dynamics | Yes | Yes |
-| Buses 1–6 | Yes | Yes |
-| Main LR | Yes | Yes |
-| Sends to bus | Yes | Yes |
-| Scenes (recall, save, name) | Yes | Yes |
-| Channel input source | Yes | Yes (0–15) |
-| Effects | Yes | Yes |
-| Matrix 1–6 | Yes | No (no-op) |
-| Aux 1–6, send to aux | Yes | No (no-op) |
 
 ## Development
 
@@ -305,7 +252,7 @@ npm start
 
 2. **Check OSC settings**: Ensure OSC is enabled on the mixer
 
-3. **Firewall**: Make sure your firewall allows UDP traffic on port 10023
+3. **Firewall**: Make sure your firewall allows UDP traffic on port 10024
 
 4. **Check Claude Desktop logs**: 
    - macOS: `~/Library/Logs/Claude/`
@@ -338,23 +285,28 @@ The `osc_custom_command` tool allows you to send any OSC command to the mixer. T
 }
 ```
 
-#### Controlling Channel Preamp Gain
+#### Controlling Headamp Gain (X-Air)
 ```json
 {
-  "address": "/ch/03/preamp/trim",
+  "address": "/headamp/01/gain",
   "value": 0.5
 }
 ```
 
-#### Setting High-Pass Filter
+#### Setting High-Pass Filter / Low Cut (X-Air)
+Use the dedicated tools `osc_set_hpf_on` and `osc_set_hpf` for best compatibility.
+
+Or via custom command (channel 05, 100 Hz for male vocal):
 ```json
-{
-  "address": "/ch/02/hpf",
-  "value": 1
-}
+{"address": "/ch/05/preamp/hpon", "value": 1}
+```
+```json
+{"address": "/ch/05/preamp/hpf", "value": 100}
 ```
 
-#### Controlling Insert Effects
+**Note:** X-Air may expect either raw Hz (20-400) or normalized (0.0-1.0 for 20-200 Hz). The MCP tools send raw Hz. If Low Cut doesn't respond, try normalized: `(Hz - 20) / 180` (e.g. 100 Hz → 0.444).
+
+#### Controlling Insert Effects (X-Air)
 ```json
 {
   "address": "/ch/04/insert/on",
@@ -370,19 +322,11 @@ The `osc_custom_command` tool allows you to send any OSC command to the mixer. T
 }
 ```
 
-#### Controlling Effects Parameters
+#### Controlling Effects Parameters (X-Air: effects 1-4)
 ```json
 {
-  "address": "/fx/01/par/01",
+  "address": "/fx/1/par/01",
   "value": 0.75
-}
-```
-
-#### Setting Matrix Configuration
-```json
-{
-  "address": "/mtx/01/config/name",
-  "value": "Recording"
 }
 ```
 
@@ -412,13 +356,12 @@ Some OSC commands don't require a value:
 
 ### Common OSC Addresses
 
-#### Channel Configuration
+#### Channel Configuration (X-Air: channels 01-16)
 - `/ch/{nn}/config/name` - Channel name (string)
 - `/ch/{nn}/config/color` - Channel color (0-15)
-- `/ch/{nn}/config/source` - Input source (0-63)
-- `/ch/{nn}/preamp/trim` - Preamp gain (0.0-1.0)
-- `/ch/{nn}/preamp/hpon` - High-pass filter on (0/1)
-- `/ch/{nn}/preamp/hpf` - High-pass filter frequency (0.0-1.0)
+- `/ch/{nn}/config/insrc` - Input source (0-15)
+- `/ch/{nn}/preamp/hpon` - High-pass filter on (0/1). Use `osc_set_hpf_on`
+- `/ch/{nn}/preamp/hpf` - High-pass filter frequency. Use `osc_set_hpf` (20-400 Hz, logarithmic scale 0.0-1.0, clamped)
 
 #### Channel Mix
 - `/ch/{nn}/mix/solo` - Solo channel (0/1)
@@ -429,26 +372,21 @@ Some OSC commands don't require a value:
 - `/ch/{nn}/insert/on` - Insert effect on (0/1)
 - `/ch/{nn}/insert/pos` - Insert position (0-3)
 
-#### Bus Configuration
-- `/bus/{nn}/config/name` - Bus name (string)
-- `/bus/{nn}/config/color` - Bus color (0-15)
-- `/bus/{nn}/config/mono` - Mono bus (0/1)
+#### Bus Configuration (X-Air: buses 1-6)
+- `/bus/{n}/config/name` - Bus name (string)
+- `/bus/{n}/config/color` - Bus color (0-15)
 
-#### Effects
-- `/fx/{nn}/on` - Effect on (0/1)
-- `/fx/{nn}/mix` - Effect mix (0.0-1.0)
-- `/fx/{nn}/par/{nn}` - Effect parameter (0.0-1.0)
-
-#### Matrix
-- `/mtx/{nn}/config/name` - Matrix name (string)
-- `/mtx/{nn}/config/color` - Matrix color (0-15)
+#### Effects (X-Air: 1-4)
+- `/fx/{n}/insert` - Effect insert on (0/1)
+- `/fx/{n}/mix` - Effect mix (0.0-1.0)
+- `/fx/{n}/par/{nn}` - Effect parameter (0.0-1.0)
 
 #### System
 - `/-stat/talk` - Talkback (0/1)
 - `/-stat/solosw` - Solo switch (no value)
 - `/-stat/rtn` - Return solo (0/1)
 
-**Note**: Replace `{nn}` with zero-padded channel/bus/effect numbers (e.g., `01`, `02`, `15`).
+**Note**: For X-Air, channel numbers are zero-padded (e.g. `01`, `16`). Bus numbers are 1-6 (unpadded). Effect numbers are 1-4.
 
 ### Value Types
 
@@ -465,9 +403,13 @@ Example with multiple arguments:
 }
 ```
 
-## X32 OSC Reference
+## X-Air OSC Reference
 
-For advanced usage and complete OSC command reference, refer to the [Behringer X32 OSC Protocol](https://wiki.munichmakerlab.de/images/1/17/UNOFFICIAL_X32_OSC_REMOTE_PROTOCOL_%281%29.pdf).
+For the complete X-Air OSC command reference, see [X-Air / M-Air OSC Commands](https://behringer.world/wiki/doku.php?id=x-air_osc).
+
+## Inspiration
+
+This project was inspired by OSC control work for digital mixers; it is simplified here to focus exclusively on the X-Air family to avoid confusing agents and keep the tool set aligned with one platform.
 
 ## License
 

@@ -2,7 +2,7 @@
 
 ## ✅ What's Been Created
 
-A complete MCP (Model Context Protocol) server for controlling the Behringer X32 digital mixer through Claude Desktop using natural language commands.
+A complete MCP (Model Context Protocol) server for controlling X-Air family mixers (Behringer XR12, XR16, XR18; Midas MR18) through Claude Desktop using natural language commands.
 
 ## 📁 Project Structure
 
@@ -68,7 +68,7 @@ Add this configuration (update the IP address and path):
       ],
       "env": {
         "OSC_HOST": "192.168.1.70",
-        "OSC_PORT": "10023"
+        "OSC_PORT": "10024"
       }
     }
   }
@@ -133,16 +133,13 @@ Once configured, you can use natural language commands like:
 
 ### OSC Communication:
 - Protocol: UDP
-- Default Port: 10023
+- Default Port: 10024 (X-Air)
 - Bidirectional communication with mixer
 - Automatic connection keep-alive (/xremote every 9 seconds)
 
 ### Supported Mixer Models:
-- Behringer X32
-- Behringer X32 Compact
-- Behringer X32 Producer
-- Behringer X32 Rack
-- Midas M32 (compatible)
+- Behringer XR12, XR16, XR18
+- Midas MR18
 
 ## 📚 Documentation Files
 
@@ -173,7 +170,7 @@ Once configured, you can use natural language commands like:
 - **"Cannot find module"** - Run `npm install` and `npm run build`
 - **"Connection timeout"** - Check IP address and network
 - **"Tools not appearing"** - Restart Claude Desktop completely
-- **"Permission denied"** - Check firewall settings for UDP port 10023
+- **"Permission denied"** - Check firewall settings for UDP port 10024
 
 ## 🎓 Next Steps
 
@@ -209,9 +206,8 @@ Set up a basic mix:
 
 ## 📖 Resources
 
-- [X32 OSC Protocol Documentation](https://wiki.munichmakerlab.de/images/1/17/UNOFFICIAL_X32_OSC_REMOTE_PROTOCOL_%281%29.pdf)
+- [X-Air / M-Air OSC Commands](https://behringer.world/wiki/doku.php?id=x-air_osc)
 - [Model Context Protocol](https://modelcontextprotocol.io/)
-- [Behringer X32 Manual](https://www.behringer.com/product.html?modelCode=P0ASF)
 
 ## ✨ Built With
 
@@ -220,35 +216,6 @@ Set up a basic mix:
 - OSC.js
 - Node.js
 
-## 🖥️ Using the X32 Emulator
-
-If you don't have a physical mixer, you can use the Patrick Maillot's X32 Emulator to test the agent.
-
-1. **Download the Emulator:**
-   The file is located at: `/Users/anteriovieira/Downloads/X32_macOS/X32`
-
-2. **Make it Executable:**
-   ```bash
-   chmod +x /Users/anteriovieira/Downloads/X32_macOS/X32
-   ```
-
-3. **Run the Emulator:**
-   ```bash
-   /Users/anteriovieira/Downloads/X32_macOS/X32
-   ```
-   
-   The emulator will start and listen on **UDP port 10023**.
-
-4. **Configure Claude Desktop:**
-   Update your `claude_desktop_config.json` to use the local IP (usually `127.0.0.1` or your LAN IP) and port `10023`.
-
-   ```json
-   "env": {
-     "OSC_HOST": "127.0.0.1",
-     "OSC_PORT": "10023"
-   }
-   ```
-
 ---
 
-**Ready to start mixing with AI? Follow the installation steps above and enjoy controlling your mixer through natural conversation!** 🎚️🎵
+**Ready to start mixing with AI? Follow the installation steps above and enjoy controlling your X-Air mixer through natural conversation!** 🎚️🎵

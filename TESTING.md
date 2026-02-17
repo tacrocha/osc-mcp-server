@@ -1,17 +1,14 @@
 # Testing Guide
 
-This guide explains how to test the OSC MCP server using an external emulator (e.g., X32-Edit).
+This guide explains how to test the OSC MCP server with an X-Air family mixer (Behringer XR12, XR16, XR18; Midas MR18).
 
 ## Overview
 
-Since we are using an external application to emulate the X32 mixer, you will need to:
+The server is designed for X-Air mixers only. To test:
 
-1.  **Install and Run the Emulator**: Download and install the X32-Edit application (or similar emulator) from the Behringer website.
-2.  **Configure the Emulator**:
-    *   Ensure the emulator is running and listening for OSC commands.
-    *   Note the IP address and Port the emulator is using (usually UDP port 10023).
-3.  **Configure the MCP Server**:
-    *   Update your `claude_desktop_config.json` to point to the emulator's IP and Port.
+1. **Connect your X-Air mixer** to the same network as your computer.
+2. **Enable OSC** on the mixer (if required by your model).
+3. **Configure the MCP server** with the mixer's IP and port 10024.
 
 ## Configuration
 
@@ -30,30 +27,33 @@ Add or update the configuration:
         "/path/to/osc-mcp/dist/index.js"
       ],
       "env": {
-        "OSC_HOST": "127.0.0.1", // Or the IP of your emulator
-        "OSC_PORT": "10023"      // The port your emulator is listening on
+        "OSC_HOST": "192.168.1.70",
+        "OSC_PORT": "10024"
       }
     }
   }
 }
 ```
 
+Replace `OSC_HOST` with your X-Air mixer's IP address. Use port **10024** for X-Air.
+
 ## Running Tests
 
-You can run the connection test script to verify connectivity to the emulator:
+Run the connection test script to verify connectivity:
 
 ```bash
 npm test
 ```
 
-This will attempt to connect to the X32 mixer (or emulator) at the configured address and perform basic operations.
+This will attempt to connect to the X-Air mixer at the configured address and perform basic operations. Ensure the mixer is powered on and on the same network.
 
 ## Manual Testing
 
-Once connected, you can use Claude Desktop to control the emulator. Try commands like:
+Once connected, use Claude Desktop (or another MCP client) to control the mixer. Try commands like:
 
-*   "Set channel 1 fader to 75%"
-*   "Mute channel 3"
-*   "Pan channel 2 to the left"
+- "Set channel 1 fader to 75%"
+- "Mute channel 3"
+- "Pan channel 2 to the left"
+- "What's the mixer status?"
 
-Verify the changes are reflected in the emulator's interface.
+Verify that changes are reflected on the mixer or in the X-Air edit app if you use it for monitoring.

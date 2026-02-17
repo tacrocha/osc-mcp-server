@@ -1,37 +1,40 @@
 {
-    "name": "osc-mcp",
-    "version": "1.0.0",
-    "description": "MCP server for controlling digital mixers (Behringer X32, Midas M32, etc.) via OSC",
-    "type": "module",
-    "main": "dist/index.js",
-    "bin": {
-        "osc-mcp": "./dist/index.js"
-    },
-    "scripts": {
-        "build": "tsc",
-        "dev": "tsc --watch",
-        "start": "node dist/index.js",
-        "prepare": "npm run build",
-        "test": "node test-connection.js"
-    },
-    "keywords": [
-        "mcp",
-        "osc",
-        "behringer",
-        "x32",
-        "midas",
-        "m32",
-        "audio",
-        "mixer"
-    ],
-    "author": "",
-    "license": "MIT",
-    "dependencies": {
-        "@modelcontextprotocol/sdk": "^0.5.0",
-        "osc-js": "^2.4.1"
-    },
-    "devDependencies": {
-        "@types/node": "^20.10.0",
-        "typescript": "^5.3.3"
-    }
+  "name": "osc-mcp",
+  "version": "1.0.0",
+  "description": "MCP server for controlling X-Air family mixers (Behringer XR12, XR16, XR18; Midas MR18) via OSC",
+  "type": "module",
+  "main": "dist/index.js",
+  "bin": {
+    "osc-mcp": "./dist/index.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "start": "node dist/index.js",
+    "prepare": "npm run build",
+    "test": "node test-connection.js"
+  },
+  "keywords": [
+    "mcp",
+    "osc",
+    "behringer",
+    "x-air",
+    "xr12",
+    "xr16",
+    "xr18",
+    "midas",
+    "mr18",
+    "audio",
+    "mixer"
+  ],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^0.5.0",
+    "osc-js": "^2.4.1"
+  },
+  "devDependencies": {
+    "@types/node": "^20.10.0",
+    "typescript": "^5.3.3"
+  }
 }
