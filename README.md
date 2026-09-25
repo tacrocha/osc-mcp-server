@@ -63,6 +63,15 @@ Scene names (`osc_get_scene_name`) return a value only when that scene is the cu
 - `OSC_HOST`: IP address of your X-Air mixer (default: `192.168.1.17`)
 - `OSC_PORT`: OSC port (default: `10024` for X-Air)
 
+### Claude Code CLI
+
+```bash
+claude mcp add osc --env OSC_HOST=192.168.1.70 --env OSC_PORT=10024 -- node /path/to/osc-mcp/dist/index.js
+```
+
+> Not yet published to npm. Once published, this will become:
+> `claude mcp add osc --env OSC_HOST=192.168.1.70 --env OSC_PORT=10024 -- npx -y xair-mcp`
+
 ### Claude Desktop Configuration
 
 Add the following to your Claude Desktop configuration file:
